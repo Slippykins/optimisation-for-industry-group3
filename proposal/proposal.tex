@@ -1,0 +1,51 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{listings}
+\geometry{margin=1in}
+
+%\title{MAST 90014 - Optimisation for Industry \\ Group Project Proposal}
+%\author{Group 3}
+%\date{\today}
+%
+\begin{document}
+%
+%\maketitle
+%
+%\section{Distribution Optimisation in Supply Chain Scenarios}
+
+\section{Context}
+When you go into your favourite retailer, you rarely consider the immense effort and planning that went into ensuring those shiny new headphones were sitting on the shelf waiting for you.
+
+In order for those headphones to be stocked, they travelled through a complex and interconnected distribution system from supplier to retailer. Distribution is a critical component of supply chain management, widely applicable in various industries such as consumer electronics, food and beverage, apparel, and personal care products. The process may vary, but in most practical applications a set of central warehouses (referred to as "main warehouses") must allocate goods to retail stores in an efficient manner to meet consumer demand.
+
+The main challenges include:
+\begin{itemize}
+    \item Over-distribution: Excessive allocation of goods to stores leads to inventory buildup and increased holding costs.
+    \item Under-distribution: Insufficient allocation fails to meet consumer demand resulting in shortage costs.
+    \item Limited warehouse capacity: Goods should be prioritised for stores with higher per-unit shortage costs and higher potential demand.
+    \item Logistics cost variation: Stores usually incur lower logistic costs when receiving goods from closer warehouses.
+\end{itemize}
+\section{Data}
+To solve our problem, we will need to collect/mock data on the set of warehouses/stores/goods, estimates for per-unit holding/shortage/transit costs, exogenous consumer demand, the "size" of each type of good, and the capacity of each warehouse.
+
+\section{Problem}
+In this scenario, we consider the warehouses and retail stores to be owned by the same company, so we can ignore the effect of wholesale vs. retail pricing.
+
+The objective of the company is to minimise the total cost associated with the distribution of goods to its retail stores from its warehouses.
+
+The decisions available to optimise are:
+\begin{itemize}
+    \item The amount of good $g$ to have present at warehouse $w$.
+    \item The amount of good $g$ to send to store $s$ from warehouse $w$.
+\end{itemize}
+
+We can potentially extend this problem from a single-period problem to a multi-time-period problem where warehouses must also consider:
+\begin{itemize}
+    \item The amount of good $g$ to order at time $t$ for distribution at time $t+N$, where it takes $N$ periods for upstream orders to arrive.
+    \item The amount of good $g$ to retain at time $t$ for distribution at time $t+1$.
+\end{itemize}
+
+\end{document}
