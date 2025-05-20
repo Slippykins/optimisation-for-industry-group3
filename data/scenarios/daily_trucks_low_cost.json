@@ -1,0 +1,6 @@
+{
+  "num_periods": 7,
+  "truck_rental_period": "daily",
+  "truck_capacity": 10500,
+  "truck_daily_rental_cost": 150
+}
