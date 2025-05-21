@@ -1,0 +1,5 @@
+{
+    "Cuts": 3,
+    "TimeLimit": 100,
+    "MIPGap": 0.01
+}
