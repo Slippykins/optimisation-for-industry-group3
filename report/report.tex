@@ -64,14 +64,16 @@ This computational study provides critical insights into the scalability of mono
 \subsection{Project Contributions}\label{subsec:project-contributions}
 
 This project makes three primary contributions to supply chain optimisation practice:
-
-\textbf{Real-World Parameterization}: Unlike studies using synthetic data, we ground our analysis in actual product specifications, industry-standard cost structures, and observed Black Friday demand patterns.
+\begin{itemize}
+    \item \textbf{Real-World Parameterization}: Unlike studies using synthetic data, we ground our analysis in actual product specifications, industry-standard cost structures, and observed Black Friday demand patterns.
 This includes sourcing real product dimensions, incorporating actual truck rental rates, and calibrating holding costs to reflect Black Friday warehouse premiums.
 
-\textbf{Comparative Scenario Analysis}: We systematically compare four operational scenarios combining different fleet management strategies and market conditions.
+    \item \textbf{Comparative Scenario Analysis}: We systematically compare four operational scenarios combining different fleet management strategies and market conditions.
 This 2×2 analysis framework provides actionable insights for retailers facing decisions about transportation flexibility versus cost efficiency.
 
-\textbf{Scalability Assessment}: Through our scale study spanning problem sizes from 18 to 6,000 decision variables, we establish practical guidelines for when integrated optimisation remains viable versus when decomposition approaches become necessary.
+    \item \textbf{Scalability Assessment}: Through our scale study spanning problem sizes from 18 to 6,000 decision variables, we establish practical guidelines for when integrated optimisation remains viable versus when decomposition approaches become necessary.
+
+\end{itemize}
 
 \subsection{Report Structure}\label{subsec:report-structure}
 
@@ -287,9 +289,9 @@ We selected three products representing typical Black Friday electronics categor
 \toprule
 Product & Retail Price & Shortage Cost & Holding Cost & Units/Truck \\
 \midrule
-Samsung Galaxy S25 Ultra & \$2,200 & \$1,100 & \$44/day & 350 \\
-Audio-Technica ATH-R50x & \$400 & \$200 & \$8/day & 60 \\
-Samsung Galaxy Buds FE & \$200 & \$50 & \$10/day & 1,500 \\
+Samsung Galaxy S25 Ultra & \$2,200~\cite{phonecost} & \$1,100 & \$44/day & 350~\cite{phonespecs} \\
+Audio-Technica ATH-R50x & \$400~\cite{headphonescost} & \$200 & \$8/day & 60~\cite{headphonesspecs} \\
+Samsung Galaxy Buds FE & \$200~\cite{earphonescost} & \$50 & \$10/day & 1,500~\cite{earphonesspecs} \\
 \bottomrule
 \end{tabular}\label{tab:table}
 \end{table}
@@ -326,7 +328,8 @@ Truck capacity allocations assume these products represent 1\% of total cargo, y
 
 \subsection{Demand Profiles}\label{subsec:demand-profiles}
 
-We model identical demand patterns across all five retailers to isolate the effects of transportation costs and truck scheduling decisions. The demand profiles reflect typical Black Friday consumer behavior:
+We model identical demand patterns across all five retailers to isolate the effects of transportation costs and truck scheduling decisions.
+The demand profiles reflect typical Black Friday consumer behavior:
 
 \begin{table}[h]
 \centering
@@ -335,59 +338,43 @@ We model identical demand patterns across all five retailers to isolate the effe
 \toprule
 Product & Mon & Tue & Wed & Thu & Fri (BF) & Sat & Sun \\
 \midrule
-Phones (Good 0) & 100 & 50 & 30 & 10 & 1,000 & 600 & 400 \\
+Earphones (Good 0) & 100 & 50 & 30 & 10 & 1,000 & 600 & 400 \\
 Headphones (Good 1) & 50 & 20 & 0 & 0 & 200 & 10 & 20 \\
-Earphones (Good 2) & 10 & 5 & 3 & 1 & 100 & 80 & 80 \\
+Phones (Good 2) & 10 & 5 & 3 & 1 & 100 & 80 & 80 \\
 \bottomrule
 \end{tabular}\label{tab:table2}
 \end{table}
 
 Key demand characteristics:
 \begin{itemize}
-    \item \textbf{Phones}: Steady decline from Monday to Thursday (100→10 units), massive spike on Black Friday (1,000 units), gradual decline over weekend
+    \item \textbf{Earphones}: Steady decline from Monday to Thursday (100→10 units), massive spike on Black Friday (1,000 units), gradual decline over weekend
     \item \textbf{Headphones}: No demand Wednesday-Thursday as consumers wait for deals, concentrated spike on Black Friday (200 units)
-    \item \textbf{Earphones}: Minimal pre-Black Friday demand, sustained weekend demand (80 units/day) as consumers purchase accessories
-\end{itemize}
-
-Total weekly demand across all retailers:
-\begin{itemize}
-    \item Phones: 11,450 units (2,290 per retailer)
-    \item Headphones: 1,500 units (300 per retailer)
-    \item Earphones: 1,395 units (279 per retailer)
+    \item \textbf{Phones}: Minimal pre-Black Friday demand, sustained weekend demand (80 units/day) as consumers purchase accessories
 \end{itemize}
 
 \subsection{Network Structure}\label{subsec:network-structure}
 \begin{itemize}
     \item 5 warehouses representing distribution centers
     \item 5 retailers representing metropolitan locations
-    \item Transportation costs varying by distance (range: \$0.40-\$4.00 per unit)
+    \item Transportation costs varying by distance (range: \$0.40-\$2.60 per unit)
     \item Maximum 10 trucks daily (driver availability constraint)
 \end{itemize}
 
 \subsection{Computational Scale Study}\label{subsec:computational-scale-study}
 
-Beyond analyzing the specific Black Friday case, we investigate how the problem characteristics and solution approaches scale to larger supply chain networks. This scale study serves two critical purposes:
-
-\textbf{Practical Relevance}: Real-world retailers often operate dozens of warehouses serving hundreds of stores with thousands of SKUs. Understanding how our optimisation approach performs at different scales ensures the methodology remains viable for enterprise-level implementation.
-
-\textbf{Computational Insights}: As problem size increases, the number of decision variables grows multiplicatively (warehouses × retailers × products × periods). The scale study reveals whether solution times increase linearly, polynomially, or exponentially, informing decisions about model granularity and decomposition strategies.
-
-We examine four problem scales representing different retail contexts:
+Beyond analyzing the specific Black Friday case, we investigate how the problem characteristics and solution approaches scale to larger supply chain networks.
+This scale study serves two critical purposes:
 \begin{itemize}
-    \item \textbf{Very Small Scale} (2 warehouses, 3 products, 3 retailers): Represents a regional retailer or a pilot program for testing new distribution strategies. This scale allows detailed analysis of solution structure and sensitivity to parameters.
+    \item \textbf{Practical Relevance}: Real-world retailers often operate dozens of warehouses serving hundreds of stores with thousands of SKUs.
+    Understanding how our optimisation approach performs at different scales ensures the methodology remains viable for enterprise-level implementation.
 
-    \item \textbf{Small Scale} (5 warehouses, 5 products, 5 retailers): Matches our primary case study, representing a mid-sized retail operation or a product category within a larger retailer.
-
-    \item \textbf{Medium Scale} (10 warehouses, 10 products, 10 retailers): Represents a national retailer's operations for a specific department or a complete regional distribution network.
-
-    \item \textbf{Large Scale} (20 warehouses, 15 products, 20 retailers): Approaches the complexity of major retail chains, testing the practical limits of monolithic optimisation before decomposition becomes necessary.
+    \item \textbf{Computational Insights}: As problem size increases, the number of decision variables grows exponentially (warehouses × retailers × products × periods).
+    The scale study reveals whether solution times increase linearly, polynomially, or exponentially, informing decisions about model granularity and decomposition strategies.
 \end{itemize}
 
-Each scale maintains the same Black Friday demand pattern and cost structure relationships, allowing us to isolate the effects of problem size on solution quality and computational performance. This systematic scaling provides guidance on when simplified models or decomposition methods become necessary for practical implementation.
 
-To support the scaling of the problem, we produce a set of realistic synthetic data based upon the data we hand-crafted for our case study. The details on this methods for creating this data is available in the Computation Scale Study section.
+Further information on the Computational Case Study, including scales studied and the methods for creating synthetic data is available in section~\ref{sec:computational-scale-study}.
 
-Each scale is evaluated under the same four scenarios as the case study, resulting in 16 total experiments (4 scales × 4 scenarios), allowing us to analyze both computational scalability and the impact of problem size on optimal distribution strategies.
 
 
 
@@ -397,20 +384,29 @@ Each scale is evaluated under the same four scenarios as the case study, resulti
 
 \section{Solution strategy}\label{sec:solution-strategy}
 
-As described in the above section, we propose an IP model to optimise the rental and scheduling plan. Such a formulation is usually solved exactly using branch-and-bound algorithm. In this project, We solve the proposed formulation using Gurobi, which solves IP or MIP model using branch-and-cut algorithm. Compared with standard branch-and-bound algorithm, this solver integrates some heuristics policy and valid cuts into the branch-and-bound algorithm, significantly accelerating the solving process.
+As described in the above section, we propose an IP model to optimise the rental and scheduling plan.
+Such a formulation is usually solved exactly using branch-and-bound algorithm.
+In this project, we solve the proposed formulation using Gurobi, which solves IP or MIP model using branch-and-cut algorithm.
+Compared with standard branch-and-bound algorithm, this solver integrates some heuristics policy and valid cuts into the branch-and-bound algorithm, significantly accelerating the solving process.
 
-However, this solver cannot handle our formulation when the size is large. Specifically, we observe that the solver needs more than 100 seconds to solve the size of 5 warehouses, 30 types of goods, 15 retailers and 5 periods using our synthetic data. To overcome this issue, some techniques proposed in this section are applied to accelerate the solving process.
-
+However, this solver cannot handle our formulation when the size is large.
+Specifically, we observe that the solver needs more than 100 seconds to solve the size of 5 warehouses, 30 types of goods, 15 retailers and 5 periods using our synthetic data.
+To overcome this issue, some techniques proposed in this section are applied to accelerate the solving process.
 
 
 \subsection{Branching strategy}\label{subsec:branching-strategy}
-The branch priority is significant to the solving efficiency. As the branch-and-bound is far more larger, especially when variables are integer, compared with binary case. To mitigate this issue, we require the solver to branch significant variables with higher priority.
+The branch priority is significant to the solving efficiency.
+As the branch-and-bound is far larger, especially when variables are integer, compared with binary case.
+To mitigate this issue, we require the solver to branch significant variables with higher priority.
 
-In our case, the priority of the number of trucks rented is assigned with the highest priority, followed by the scheduling variables, and then the shortage calculation. The above process is implemented by setting the parameter \textbf{\textit{BranchPriority}} of each variables in Gurobi.
+In our case, the priority of the number of trucks rented is assigned with the highest priority, followed by the scheduling variables, and then the shortage calculation.
+The above process is implemented by setting the parameter \textbf{\textit{BranchPriority}} of each variable in Gurobi.
 
 \subsection{Active cuts search}
 We note that the best bound of the problem provided by the solver
-is hard to be improved, while the best incumbent is relatively easy to derive with the help of heuristics integrated into the solver. Based on this observation, we attempt to add more valid cuts into the formulation, so as to tighten the relaxation bound. To implement this, we set the parameter \textbf{\textit{Cuts}} to \textbf{3} in Gurobi, so as to encourage the solver to find more valid cuts.
+is hard to be improved, while the best incumbent is relatively easy to derive with the help of heuristics integrated into the solver.
+Based on this observation, we attempt to add more valid cuts into the formulation, to tighten the relaxation bound.
+To implement this, we set the parameter \textbf{\textit{Cuts}} to \textbf{3} in Gurobi, to encourage the solver to find more valid cuts.
 
 
 
@@ -441,11 +437,17 @@ When the renting cost of trucks is low, it is interesting to see that the final 
 
 \section{Computational scale study}\label{sec:computational-scale-study}
 
-In this section, we compare the efficiency between our method and the benchmark (using Gurobi directly without any modifications). The maximum runtime of Gurobi is limited to 100 seconds to meet the efficiency requirements of modern business operations. The time spent on constructing the model isn't included since one can change the cost vector and constraint matrix of the existing model efficiently in practice, so we focus on the runtime of the model. Computational experiments are performed on a computer equipped with an AMD Ryzen 7 6800H processor and 16 GB of RAM. All algorithms are written in Python version 3.9.2 and Gurobi 10.0.1.
+In this section, we compare the efficiency between our method and the benchmark (using Gurobi directly without any modifications).
+The maximum runtime of Gurobi is limited to 100 seconds to meet the efficiency requirements of modern business operations.
+The time spent on constructing the model isn't included since one can change the cost vector and constraint matrix of the existing model efficiently in practice, so we focus on the runtime of the model.
+Computational experiments are performed on a computer equipped with an AMD Ryzen 7 6800H processor and 16 GB of RAM.
+All algorithms are written in Python version 3.9.2 and Gurobi 10.0.1.
 
 \subsection{Synthetic data}
 
-Our collected dataset isn't enough to support the computational evaluation for large-scale instance, we thus extend it with some modifications. While some parameters are used directly, other parameters are generated using the random number API provided by Numpy. We denote an uniform distribution with lower bound $b$ and upper bound $a$ as $U(a, b)$.
+Our collected dataset isn't enough to support the computational evaluation for large-scale instance, we thus extend it with some modifications.
+While some parameters are used directly, other parameters are generated using the random number API provided by Numpy.
+We denote an uniform distribution with lower bound $b$ and upper bound $a$ as $U(a, b)$.
 
 \begin{table}[htbp]
     \centering
@@ -466,7 +468,7 @@ Our collected dataset isn't enough to support the computational evaluation for l
 In addition, we adjust the maximum number of trucks using the following expression:
 
 $$
-maximum \ number \ of \ trucks = \frac{total \ demands}{number \ of \  periods}.
+maximum \ number \ of \ trucks = \ceiling{\frac{total \ demands}{number \ of \  periods}}
 $$
 
 \subsection{Results}
@@ -621,6 +623,46 @@ Retrieved from https://www.zoho.com/inventory/academy/inventory-management/what-
 Unleashedsoftware.com (2024).
 What is a Good Profit Margin?
 Retrieved from https://www.unleashedsoftware.com/inventory-accounting-guide/what-is-a-good-profit-margin/
+
+\bibitem{truckcosts1}
+budgettrucks.com.au (2025).
+Victoria Weekly Rates on Trucks.
+Retrieved from https://www.budgettrucks.com.au/en/offers/vic/weekly-rates
+
+\bibitem{truckcosts2}
+hertztrucks.com.au (2025).
+Trucks with 50m3 capacity.
+Retrieved from https://www.hertztrucks.com.au/bookings/choose-vehicle
+
+\bibitem{phonecost}
+jbhifi.com.au (2025).
+Samsung Galaxy S25 Ultra 512GB (Titanium Black).
+Retrieved from https://www.jbhifi.com.au/products/samsung-galaxy-s25-ultra-512gb-titanium-black
+
+\bibitem{phonespecs}
+samsung.com.au (2025).
+Samsung Galaxy S25 Ultra 512GB (Titanium Black).
+Retrieved from https://www.samsung.com/au/smartphones/galaxy-s25-ultra/specs/\#:~:text=Physical\%20specification,Gear\%20Support
+
+\bibitem{headphonescost}
+jbhifi.com.au (2025).
+Audio Technica ATH-R50X Professional Open Back Headphone.
+Retrieved from https://www.jbhifi.com.au/products/audio-technica-ath-r50x-professional-open-back-headphone
+
+\bibitem{headphonesspecs}
+amazon.com.au (2025).
+Audio Technica ATH-R50X Professional Open Back Headphone.
+Retrieved from https://www.amazon.com/Audio-Technica-Professional-Open-Back-Reference-Headphones/dp/B0DTTWF1Z9?th=1
+
+\bibitem{earphonescost}
+JB HiFi (2025).
+Samsung Galaxy Buds FE (White).
+Retrieved from https://www.jbhifi.com.au/products/samsung-galaxy-buds-fe-white
+
+\bibitem{earphonesspecs}
+amazon.com.au (2025).
+Samsung Galaxy Buds FE (White).
+Retrieved from https://www.amazon.com.au/Samsung-Galaxy-Buds-FE-SM-R400NZWAEUA/dp/B0CPFH7FBM
 
 \end{thebibliography}
 
