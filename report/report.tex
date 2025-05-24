@@ -1,0 +1,629 @@
+\documentclass[a4paper,12pt]{article}
+\usepackage{graphicx}
+\usepackage{amsmath, amssymb}
+\usepackage{hyperref}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{multirow}
+\usepackage{multicol}
+\usepackage{booktabs}
+\usepackage{caption}  
+
+\geometry{margin=1in}
+
+\title{MAST 90014 - Optimisation for Industry \\ Group Project 2025}
+\author{{Dean Soste}, {Yitian Wang}, {Tony Yue}, \\
+{Zhouyi Cheng}, {Abdullah Alsuwat}, {Sahar Bahalgardi}
+}
+\date{\today}
+
+\begin{document}
+
+\maketitle
+
+
+
+
+\section{Introduction}\label{sec:introduction}
+
+Distribution planning during promotional periods represents one of the most challenging problems in retail supply chain management.
+When demand can surge to 10 times normal levels within a single day, traditional inventory and transportation strategies often fail, leading to either costly stock-outs or excessive inventory holding costs.
+This project examines how mixed-integer programming can optimise distribution decisions for electronics retailers during Black Friday, one of the year's most intense promotional period.
+
+\subsection{Business Context and Motivation}\label{subsec:business-context-and-motivation}
+
+Black Friday has evolved from a single-day sales event into a week-long phenomenon that tests the limits of retail supply chains.
+For electronics retailers like JB Hi-Fi, Harvey Norman, and Best Buy, success during this period can determine annual profitability.
+The challenge extends beyond simply having enough inventory-retailers must position the right products at the right locations while managing constrained transportation capacity and escalating logistics costs.
+
+Our study is motivated by three key industry trends:
+\begin{itemize}
+    \item The increasing concentration of sales during promotional periods means retailers cannot afford distribution failures during Black Friday.
+    \item The rise of omnichannel retail has created customer expectations for product availability that penalise stock-outs more severely than ever before.
+    \item The growing cost of logistics capacity during peak periods forces retailers to make strategic trade-offs between service levels and operational efficiency.
+\end{itemize}
+
+\subsection{Problem Overview}\label{subsec:problem-overview}
+
+We model a small-scale realistic distribution network comprising 5 warehouses serving 5 retail stores over a 7-day Black Friday period.
+The network must distribute three representative products: high-value smartphones experiencing 100-fold day-on-day demand increases, headphones with concentrated Black Friday purchasing, and earphones facing obsolescence risks from heavy discounting.
+These products capture the diversity of challenges retailers face, from managing extreme demand spikes to balancing inventory risks for promotional items.
+
+The optimisation problem addresses two fundamental decisions: how to manage truck fleet capacity (comparing flexible daily rentals against economical weekly contracts) and how to route products through the network over time.
+With truck availability limited to 10 vehicles per day and each truck constrained to 10,500 volume units, the model must balance transportation efficiency against inventory costs while ensuring product availability during demand surges.
+
+\subsection{Technical Approach}\label{subsec:technical-approach}
+
+We formulate the problem as a mixed-integer program that minimizes total operational costs across transportation, truck rental, inventory holding, and stock-out penalties.
+The discrete nature of truck quantities and the integrality of product shipments create a complex optimisation landscape with millions of potential solutions.
+Our approach leverages modern MIP solvers (Gurobi) enhanced with problem-specific solution strategies including strategic branching priorities and aggressive cut generation.
+
+Beyond the base case study, we conduct a systematic scale analysis examining how the solution approach performs on problems ranging from small regional networks (2 warehouses, 3 retailers) to large national operations (20 warehouses, 20 retailers).
+This computational study provides critical insights into the scalability of monolithic optimisation approaches and identifies when decomposition strategies become necessary.
+
+\subsection{Project Contributions}\label{subsec:project-contributions}
+
+This project makes three primary contributions to supply chain optimisation practice:
+
+\textbf{Real-World Parameterization}: Unlike studies using synthetic data, we ground our analysis in actual product specifications, industry-standard cost structures, and observed Black Friday demand patterns.
+This includes sourcing real product dimensions, incorporating actual truck rental rates, and calibrating holding costs to reflect Black Friday warehouse premiums.
+
+\textbf{Comparative Scenario Analysis}: We systematically compare four operational scenarios combining different fleet management strategies and market conditions.
+This 2×2 analysis framework provides actionable insights for retailers facing decisions about transportation flexibility versus cost efficiency.
+
+\textbf{Scalability Assessment}: Through our scale study spanning problem sizes from 18 to 6,000 decision variables, we establish practical guidelines for when integrated optimisation remains viable versus when decomposition approaches become necessary.
+
+\subsection{Report Structure}\label{subsec:report-structure}
+
+Following this introduction, Section~\ref{sec:problem-definition} formally defines the distribution optimisation problem, explaining key assumptions and simplifications.
+
+Section~\ref{sec:literature-review} reviews relevant literature in supply chain optimisation, inventory management, and promotional period logistics.
+
+Section~\ref{sec:data} details our data collection methodology and parameter specifications.
+
+Section~\ref{sec:model} presents the mathematical model formulation.
+
+Section~\ref{sec:solution-strategy} describes our solution strategies for improving computational performance.
+
+Section~\ref{sec:results-and-analysis} analyses results from both the case study.
+
+Section~\ref{sec:computational-scale-study} defines and analyses the results from the computation cases study.
+
+Finally, Section~\ref{sec:conclusion-and-recommendations} provides conclusions and managerial recommendations for implementing these optimisation approaches in practice.
+
+
+
+
+
+\section{Problem Definition}\label{sec:problem-definition}
+
+We address the distribution planning problem faced by electronics retailers during Black Friday promotional periods.
+A retailer operating multiple warehouses must efficiently distribute products to retail stores over a one-week period encompassing Black Friday, when demand can spike to 10 times normal levels between two subsequent days.
+
+\subsection{Problem Context}\label{subsec:problem-context}
+
+The retailer manages a network of 5 warehouses serving 5 retail stores, distributing three categories of consumer electronics: high-value smartphones, mid-range headphones, and heavily discounted earphones.
+Each product category exhibits distinct demand patterns during Black Friday week, with:
+
+\begin{itemize}
+    \item Smartphones experiencing almost no demand prior to Black Friday as consumers await heavy discounts followed by a sustained 10x demand over the weekend,
+    \item Headphones showing a moderate increase in demand for Black Friday (4x), and
+    \item Earphones also showing a 10x in demand over normal levels with significant drop-off over the weekend.
+\end{itemize}
+
+The central challenge is determining optimal truck fleet management and product distribution strategies that minimise total operational costs while meeting customer demand.
+This requires coordinating decisions across multiple time periods, balancing immediate needs against future demand spikes and the resulting costs from these decisions.
+
+\subsection{Key Decisions}\label{subsec:key-decisions}
+
+The retailer must make two interconnected sets of decisions:
+\begin{itemize}
+    \item \textbf{Fleet Management}: Whether to commit to a fixed truck fleet for the entire week (weekly rental) or maintain flexibility to adjust fleet size daily (daily rental).
+Daily rentals offer operational flexibility at a 50\% cost premium, allowing the retailer to scale capacity for Black Friday's demand spike.
+
+\item \textbf{Distribution Planning}: How many units of each product to ship from each warehouse to each retailer in each time period.
+These decisions must account for truck capacity constraints, varying transportation costs between locations, and the trade-off between holding inventory and risking stockouts.
+\end{itemize}
+
+\subsection{Problem Characteristics}\label{subsec:problem-characteristics}
+
+Several factors make this problem particularly challenging:
+
+\begin{itemize}
+    \item \textbf{Extreme Demand Volatility}: Demand for earphones increases from 10 units on Thursday to 1,000 units on Black Friday - a 100-fold increase.
+Headphones show even more extreme behavior with zero demand immediately before Black Friday as customers wait for promotions.
+    \item \textbf{Capacity Constraints}: The retailer faces a hard constraint of 10 trucks per day due to driver availability.
+With each truck having a set capacity and products occupying different space, efficient packing becomes critical during peak periods.
+    \item \textbf{Heterogeneity of Goods}: Retailers and transportation companies must deal with incredibly varied goods, with significantly different characteristics in terms of shape, size, fragility, value and obsolescence.
+These characteristics heavily impact transportation considerations and the various costs faced by the retailer.
+    \item \textbf{Cost Trade-offs}: The retailer must balance four competing cost components:
+    \begin{itemize}
+        \item Transportation costs varying by distance and by good, capturing the overall cost of transporting each good and their unique characteristics applicable to transportation, like fragility.
+        \item Truck rental costs.
+        \item Inventory holding costs, including obsolescence risk for discounted items, expressed as a percentage of the retail price of the good.
+        \item Shortage costs, reflecting lost profit margins and calculated as a percentage of the retail price.
+    \end{itemize}
+\end{itemize}
+
+\subsection{Simplifications and Assumptions}\label{subsec:simplifications-and-assumptions}
+
+To make the problem tractable while maintaining practical relevance, we adopt several simplifications:
+
+\begin{itemize}
+    \item \textbf{Deterministic Demand}: We assume demand is known with certainty based on historical Black Friday patterns.
+While real demand contains uncertainty, the promotional nature of Black Friday creates relatively predictable patterns.
+Furthermore, adding uncertainty to demand forecasts would overcomplicate the problem and detract from the results and learnings of the study being performed.
+
+    \item \textbf{No Lateral Trans-shipments}: Products cannot be transferred between retail stores.
+This reflects common practice where inter-store transfers are logistically complex and time-consuming during peak periods.
+
+    \item \textbf{Unlimited Warehouse Supply}: Warehouses have sufficient inventory to meet all distribution requests.
+This assumes proper upstream planning has positioned inventory at warehouses before Black Friday week.
+
+    \item \textbf{Single Transportation Mode}: All shipments use trucks with identical capacity.
+While retailers might use multiple transportation modes, trucks represent the dominant mode for regional distribution.
+\end{itemize}
+
+
+\subsection{Problem Variants}\label{subsec:problem-variants}
+
+We analyze four variants of the base problem, creating a 2×2 matrix of scenarios:
+
+\begin{itemize}
+    \item \textbf{Truck Rental Strategy}:
+    \begin{itemize}
+        \item Weekly rental: Lower daily cost but requires committing to fixed fleet size
+        \item Daily rental: Higher cost but allows dynamic fleet adjustment
+    \end{itemize}
+
+    \item \textbf{Truck Market Conditions}:
+    \begin{itemize}
+        \item High truck costs: Representing peak season rates when logistics capacity is scarce
+        \item Low truck costs: Representing normal market conditions
+    \end{itemize}
+\end{itemize}
+
+
+These variants allow us to examine how optimal distribution strategies change under different operational constraints and market conditions, providing robust insights for retail decision-makers.
+This also allows for companies to adapt to prevailing market conditions and assess the cost/benefit of a flexible fleet during highly-volatile periods.
+
+\subsection{Relevance and Applications}\label{subsec:relevance-and-applications}
+
+While framed around Black Friday, this problem represents a broader class of distribution challenges during promotional periods.
+Similar patterns occur during:
+\begin{itemize}
+    \item Product launches with anticipated demand spikes
+    \item Seasonal sales events (back-to-school, holiday shopping)
+    \item Flash sales and limited-time promotions in e-commerce
+    \item Emergency response requiring rapid inventory deployment
+\end{itemize}
+
+The insights from our analysis apply to any situation where retailers must balance distribution efficiency against service levels under extreme demand volatility and capacity constraints.
+
+
+
+
+
+
+
+\section{Literature Review}\label{sec:literature-review}
+
+The optimisation of supply chain distribution systems has been extensively studied in operations research, with mixed-integer programming (MIP) emerging as a dominant methodology for addressing complex logistics challenges.
+This literature review examines relevant research in supply chain optimisation, inventory management, and retail distribution planning, with particular attention to multi-period models and promotional period management.
+
+\subsection{Mixed-Integer Programming in Supply Chain Management}\label{subsec:mixed-integer-programming-in-supply-chain-management}
+
+Mixed-integer programming has proven to be a powerful tool for optimising complex supply chain networks.
+Mixed Integer Linear Programming (MILP) has emerged as a powerful tool for optimising complex supply chain networks~\cite{researchgate2024optimizing}, enabling companies to model production planning, network design, and transportation logistics while achieving significant cost reductions.
+The discrete nature of many supply chain decisions - such as the number of trucks to hire or the selection of warehouse locations - makes MIP particularly suitable for these applications.
+
+IBM Systems and Technology Group uses operations research models and methods extensively for solving large-scale supply chain optimisation (SCO) problems for planning its extended enterprise semiconductor supply chain~\cite{denton2005methods}, demonstrating the scalability of MIP approaches to industrial applications.
+However, the computational complexity of large-scale MIP models has led researchers to develop specialised solution techniques.
+Pure optimisation methods are computationally infeasible, and fast heuristic methods alone generate poor results~\cite{denton2005methods}, necessitating hybrid approaches that combine exact methods with heuristics.
+
+\subsection{Multi-Period Inventory Management}\label{subsec:multi-period-inventory-management}
+
+The management of inventory across multiple time periods presents unique challenges that have been addressed through various modeling approaches.
+Qiu, R., Sun, M., \& Lim, Y. F. (2017) consider a finite-horizon single-product periodic-review inventory management problem with demand distribution uncertainty~\cite{qiu2017optimizing}, highlighting the importance of robust optimisation approaches when dealing with uncertain demand patterns.
+
+Periodic review policies, particularly the $(s,S)$ policy, have received significant attention in the literature.
+The $(s, S)$ policy is a well-studied strategy~\cite{zheng1991}, summarised as when an item drops below some reserve amount $s$, a purchase order is placed to replenish the item back to a standard level $S$.
+In another paper, periodic review of the $(s,S)$ policy is used to optimise inventories from an integrated perspective of inventory management across the supply chain over time~\cite{mdpi2025inventory}.
+Under this variation, optimisation of the parameters $s, S$ themselves over time as a sort of meta-optimisation problem over the planning horizon~\cite{mdpi2025inventory}, providing a practical framework for dynamic inventory replenishment decisions.
+
+The coordinated management of multiple products adds another layer of complexity.
+A multi-item multi-period inventory control model is developed for known-deterministic variable demands under limited available budget~\cite{mahdavi2014multi}, addressing the resource allocation challenges that arise when managing diverse product portfolios.
+This is particularly relevant for retail environments where interaction effects across complementary products plays an important role in characterising the optimal inventory policy~\cite{poormoaied2021inventory}.
+
+\subsection{Promotional Period Supply Chain Management}\label{subsec:promotional-period-supply-chain-management}
+
+While the academic literature on Black Friday-specific optimisation is limited, industry reports highlight the unique challenges of promotional period supply chain management.
+85\% of retailers are at least somewhat concerned about inventory shortages during BFCM  (Black Friday and Cyber Monday)~\cite{anvyl2023black}, emphasizing the critical importance of effective distribution planning during these peak periods.
+
+The demand volatility characteristic of promotional periods creates particular challenges.
+In order to meet the targets being set by Black Friday's continued growth, supply chains are required to deliver high quantities of stock to specific locations with short deadlines~\cite{scmag2024black}.
+This aligns with our modeling approach, which incorporates demand scaling factors ranging from 0.2x to 10.0x normal levels throughout the Black Friday week.
+
+Recent industry trends show that `\textit{Early sales events like Black Friday and Cyber Monday have conditioned shoppers to start planning and purchasing well in advance}'~\cite{sc247consumer}, extending the planning horizon and requiring more sophisticated multi-period optimisation models.
+This evolution in consumer behavior reinforces the need for flexible distribution strategies that can adapt to changing demand patterns over extended promotional periods.
+
+\subsection{Integration of Distribution and Inventory Decisions}\label{subsec:integration-of-distribution-and-inventory-decisions}
+
+The integration of transportation and inventory decisions represents a critical advancement in supply chain optimisation.
+When consumers shop online and pick up at store their orders, stores are typically visited by a truck that supplies the collection points and by a transport that replenishes the inventory of the store~\cite{vazquez2021mixed}, highlighting the need for coordinated logistics planning.
+
+Recent research has emphasised the importance of considering multiple cost components simultaneously.
+This paper attempts to integrate both forward and reverse logistics to design a general closed loop supply chain (CLSC) network consisting of manufacturing plant, distribution center and customer market~\cite{saha2017mixed}, though our focus remains on forward logistics given the nature of Black Friday sales.
+
+\subsection{Solution Approaches and Computational Considerations}\label{subsec:solution-approaches-and-computational-considerations}
+
+The computational complexity of multi-period, multi-product distribution problems has led to various solution approaches.
+Since these models are very difficult to solve, they require exploiting their properties and developing special solution techniques to reduce the computational effort~\cite{you2008mixed}.
+Decomposition methods, including Lagrangean relaxation and branch-and-bound algorithms, have proven effective for large-scale problems.
+
+The book by Sawik, T. (2011), `\textit{Scheduling in Supply Chains Using Mixed Integer Programming}'~\cite{sawikt2011scheduling}, provides comprehensive coverage of MIP applications to supply chain scheduling, emphasising the importance of preprocessing and modern MIP software capabilities in solving practical-scale problems.
+This aligns with our use of Gurobi, a state-of-the-art MIP solver, for our optimisation model.
+
+\subsection{Research Gap and Contribution}\label{subsec:research-gap-and-contribution}
+
+While extensive literature exists on general supply chain optimisation and inventory management, there is limited research specifically addressing the unique characteristics of Black Friday distribution challenges using real-world data.
+Most studies either focus on theoretical models with synthetic data or examine steady-state operations rather than promotional periods with extreme demand volatility.
+
+Our research addresses this gap by developing a MIP model that explicitly incorporates Black Friday-specific characteristics: dramatic demand fluctuations, product-specific obsolescence risks (particularly for heavily discounted items), and the trade-off between flexible daily truck rentals versus cost-effective weekly contracts.
+By grounding our analysis in actual product specifications and industry-standard cost structures, we provide a practical framework that retailers can directly apply to their Black Friday distribution planning.
+
+
+
+
+\section{Data}\label{sec:data}
+
+\subsection{Product Selection}\label{subsec:product-selection}
+We selected three products representing typical Black Friday electronics categories:
+
+\begin{table}[h]
+\centering
+\caption{Product specifications}
+\begin{tabular}{lrrrr}
+\toprule
+Product & Retail Price & Shortage Cost & Holding Cost & Units/Truck \\
+\midrule
+Samsung Galaxy S25 Ultra & \$2,200 & \$1,100 & \$44/day & 350 \\
+Audio-Technica ATH-R50x & \$400 & \$200 & \$8/day & 60 \\
+Samsung Galaxy Buds FE & \$200 & \$50 & \$10/day & 1,500 \\
+\bottomrule
+\end{tabular}\label{tab:table}
+\end{table}
+
+Product dimensions were sourced from manufacturer specifications.
+Truck capacity allocations assume these products represent 1\% of total cargo, yielding the units per truck shown above.
+
+\subsection{Cost Parameters}\label{subsec:cost-parameters}
+
+\begin{itemize}
+    \item \textbf{Holding costs} are based on 2\% daily rate for Black Friday inventory (2.5x normal rate):
+    \begin{itemize}
+        \item Standard calculation: based on reported industry standards~\cite{holdingcosts} that carry costs are typically 15\% - 30\% of the value of a company's inventory.
+        Assuming this is an annual figure, this gives us around a 0.8\% of the item's retail price per day.
+        \item Black Friday multiplier accounts for warehouse premiums and time sensitivity.
+        \item Earphones have elevated holding cost (\$10 vs \$4 standard) due to obsolescence risk.
+    \end{itemize}
+
+    \item \textbf{Shortage costs} reflect lost profit margins:
+    \begin{itemize}
+        \item Standard calculation: based on reported industry standards~\cite{shortagecosts} that 50\% - 70\% are considered good margins, and that the shortage cost is close to the opportunity cost of a lost sale (ie. the margin)
+        \item Phones and headphones: 50\% margin (industry standard for electronics)
+        \item Earphones: 25\% margin due to heavy discounting
+    \end{itemize}
+
+    \item \textbf{Truck rental costs} from commercial providers:
+    \begin{itemize}
+        \item Weekly: \$1,100 for 7 days (50m³ truck)
+        \item Daily: \$100-\$200 depending on demand
+        \item Daily premium: 50\% surcharge over weekly rate
+    \end{itemize}
+\end{itemize}
+
+
+\subsection{Demand Profiles}\label{subsec:demand-profiles}
+
+We model identical demand patterns across all five retailers to isolate the effects of transportation costs and truck scheduling decisions. The demand profiles reflect typical Black Friday consumer behavior:
+
+\begin{table}[h]
+\centering
+\caption{Daily demand by product (units per retailer)}
+\begin{tabular}{lrrrrrrr}
+\toprule
+Product & Mon & Tue & Wed & Thu & Fri (BF) & Sat & Sun \\
+\midrule
+Phones (Good 0) & 100 & 50 & 30 & 10 & 1,000 & 600 & 400 \\
+Headphones (Good 1) & 50 & 20 & 0 & 0 & 200 & 10 & 20 \\
+Earphones (Good 2) & 10 & 5 & 3 & 1 & 100 & 80 & 80 \\
+\bottomrule
+\end{tabular}\label{tab:table2}
+\end{table}
+
+Key demand characteristics:
+\begin{itemize}
+    \item \textbf{Phones}: Steady decline from Monday to Thursday (100→10 units), massive spike on Black Friday (1,000 units), gradual decline over weekend
+    \item \textbf{Headphones}: No demand Wednesday-Thursday as consumers wait for deals, concentrated spike on Black Friday (200 units)
+    \item \textbf{Earphones}: Minimal pre-Black Friday demand, sustained weekend demand (80 units/day) as consumers purchase accessories
+\end{itemize}
+
+Total weekly demand across all retailers:
+\begin{itemize}
+    \item Phones: 11,450 units (2,290 per retailer)
+    \item Headphones: 1,500 units (300 per retailer)
+    \item Earphones: 1,395 units (279 per retailer)
+\end{itemize}
+
+\subsection{Network Structure}\label{subsec:network-structure}
+\begin{itemize}
+    \item 5 warehouses representing distribution centers
+    \item 5 retailers representing metropolitan locations
+    \item Transportation costs varying by distance (range: \$0.40-\$4.00 per unit)
+    \item Maximum 10 trucks daily (driver availability constraint)
+\end{itemize}
+
+\subsection{Computational Scale Study}\label{subsec:computational-scale-study}
+
+Beyond analyzing the specific Black Friday case, we investigate how the problem characteristics and solution approaches scale to larger supply chain networks. This scale study serves two critical purposes:
+
+\textbf{Practical Relevance}: Real-world retailers often operate dozens of warehouses serving hundreds of stores with thousands of SKUs. Understanding how our optimisation approach performs at different scales ensures the methodology remains viable for enterprise-level implementation.
+
+\textbf{Computational Insights}: As problem size increases, the number of decision variables grows multiplicatively (warehouses × retailers × products × periods). The scale study reveals whether solution times increase linearly, polynomially, or exponentially, informing decisions about model granularity and decomposition strategies.
+
+We examine four problem scales representing different retail contexts:
+\begin{itemize}
+    \item \textbf{Very Small Scale} (2 warehouses, 3 products, 3 retailers): Represents a regional retailer or a pilot program for testing new distribution strategies. This scale allows detailed analysis of solution structure and sensitivity to parameters.
+
+    \item \textbf{Small Scale} (5 warehouses, 5 products, 5 retailers): Matches our primary case study, representing a mid-sized retail operation or a product category within a larger retailer.
+
+    \item \textbf{Medium Scale} (10 warehouses, 10 products, 10 retailers): Represents a national retailer's operations for a specific department or a complete regional distribution network.
+
+    \item \textbf{Large Scale} (20 warehouses, 15 products, 20 retailers): Approaches the complexity of major retail chains, testing the practical limits of monolithic optimisation before decomposition becomes necessary.
+\end{itemize}
+
+Each scale maintains the same Black Friday demand pattern and cost structure relationships, allowing us to isolate the effects of problem size on solution quality and computational performance. This systematic scaling provides guidance on when simplified models or decomposition methods become necessary for practical implementation.
+
+To support the scaling of the problem, we produce a set of realistic synthetic data based upon the data we hand-crafted for our case study. The details on this methods for creating this data is available in the Computation Scale Study section.
+
+Each scale is evaluated under the same four scenarios as the case study, resulting in 16 total experiments (4 scales × 4 scenarios), allowing us to analyze both computational scalability and the impact of problem size on optimal distribution strategies.
+
+
+
+
+\section{Model}\label{sec:model}
+
+
+\section{Solution strategy}\label{sec:solution-strategy}
+
+As described in the above section, we propose an IP model to optimise the rental and scheduling plan. Such a formulation is usually solved exactly using branch-and-bound algorithm. In this project, We solve the proposed formulation using Gurobi, which solves IP or MIP model using branch-and-cut algorithm. Compared with standard branch-and-bound algorithm, this solver integrates some heuristics policy and valid cuts into the branch-and-bound algorithm, significantly accelerating the solving process.
+
+However, this solver cannot handle our formulation when the size is large. Specifically, we observe that the solver needs more than 100 seconds to solve the size of 5 warehouses, 30 types of goods, 15 retailers and 5 periods using our synthetic data. To overcome this issue, some techniques proposed in this section are applied to accelerate the solving process.
+
+
+
+\subsection{Branching strategy}\label{subsec:branching-strategy}
+The branch priority is significant to the solving efficiency. As the branch-and-bound is far more larger, especially when variables are integer, compared with binary case. To mitigate this issue, we require the solver to branch significant variables with higher priority.
+
+In our case, the priority of the number of trucks rented is assigned with the highest priority, followed by the scheduling variables, and then the shortage calculation. The above process is implemented by setting the parameter \textbf{\textit{BranchPriority}} of each variables in Gurobi.
+
+\subsection{Active cuts search}
+We note that the best bound of the problem provided by the solver
+is hard to be improved, while the best incumbent is relatively easy to derive with the help of heuristics integrated into the solver. Based on this observation, we attempt to add more valid cuts into the formulation, so as to tighten the relaxation bound. To implement this, we set the parameter \textbf{\textit{Cuts}} to \textbf{3} in Gurobi, so as to encourage the solver to find more valid cuts.
+
+
+
+
+
+
+
+
+
+
+
+\section{Results and analysis}\label{sec:results-and-analysis}
+
+As the result shows, when the cost of renting trucks is high and trucks are scheduled on a daily basis, the model tries its best to meet all the demands (and succeeds) to avoid the massive shortage cost. Truck utilization for each warehouse at each period is close to one, which is well expected for the condition where trucks are expensively rented daily, as wasting the capacity of trucks is very unprofitable. Holding cost is relatively low comparing to the truck renting cost and transportation cost, as trucks can be rented contingently and surplus in retailers can usually be avoided.
+
+When the truck renting cost is low, it would be even more profitable to rent trucks contingently, and truck utilization can be more relaxed, as the ratio of profit gained by reducing the number of trucks rented to reducing carried goods is relatively lower compared to when trucks are expensive to rent (thus the model should favor more on reducing holding cost). This is reflected in the behaviour of the model as expected, where at period 6 (the seventh day), one more truck is rented comparing to the case when renting cost is high. This has enabled the warehouses to send less products in the period before (while still meeting all demands, thus in surplus), resulting a less total holding cost.
+
+When trucks are rented on a weekly basis, the model still decides to minimize shortage cost as much as possible, even when trucks are expensive to hire. The main difference to the case where trucks are rented daily, is that during the periods when demands are low, there would be idle trucks. Therefore, truck utilization can be relaxed, and the shipments can be made generally when demanded to reduce holding cost, and there is more freedom to decide on transportation schedule to reduce transportation cost. These effects are reflected on the results, that holding cost and transportation cost are lower than in the case where trucks are rented daily, and to a slight extent offsets the increased truck renting cost due to the change in renting schedule.
+
+When the renting cost of trucks is low, it is interesting to see that the final cost only changes due to halved truck renting cost. This indicates that the decision for transportation and supplying the retailers are already optimal to ensure that the shortage cost is minimal.
+
+
+
+
+
+
+
+
+\section{Computational scale study}\label{sec:computational-scale-study}
+
+In this section, we compare the efficiency between our method and the benchmark (using Gurobi directly without any modifications). The maximum runtime of Gurobi is limited to 100 seconds to meet the efficiency requirements of modern business operations. The time spent on constructing the model isn't included since one can change the cost vector and constraint matrix of the existing model efficiently in practice, so we focus on the runtime of the model. Computational experiments are performed on a computer equipped with an AMD Ryzen 7 6800H processor and 16 GB of RAM. All algorithms are written in Python version 3.9.2 and Gurobi 10.0.1.
+
+\subsection{Synthetic data}
+
+Our collected dataset isn't enough to support the computational evaluation for large-scale instance, we thus extend it with some modifications. While some parameters are used directly, other parameters are generated using the random number API provided by Numpy. We denote an uniform distribution with lower bound $b$ and upper bound $a$ as $U(a, b)$.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Parameters setting}
+    \label{tab:example}
+    \begin{tabular}{ll}
+        \toprule
+        Parameter & Value \\
+        \midrule
+        holding costs   & $U(20, 100)$  \\
+        transportation costs   & $U(1, 4)$  \\
+        penalty costs   & $U(1, 1.2) \times$ holding costs  \\
+        demands         & $U(40, 100)$ \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+In addition, we adjust the maximum number of trucks using the following expression:
+
+$$
+maximum \ number \ of \ trucks = \frac{total \ demands}{number \ of \  periods}.
+$$
+
+\subsection{Results}
+
+In practice, the number of customer nodes and SKU are larger than the number of warehouses and periods. Therefore, we mainly focus on different scales varying in the number of the customer nodes and SKU, while slight modifications are made on the number of warehouses and periods.
+
+We run each instance size for 10 times to eliminate the randomness introduced by the solver behaviors. The computational result is listed in Table \ref{tab:method-comparison}.
+
+\begin{table}[htbp]
+    \centering
+    \caption{Performance comparison}
+    \label{tab:method-comparison}
+    \begin{tabular}{lcc|cc}
+        \toprule
+        \multirow{2}{*}{\textbf{Scale}} & \multicolumn{2}{c|}{\textbf{Improved}} & \multicolumn{2}{c}{\textbf{Benchmark}} \\
+        & Time (s) & Gap (\%) & Time (s) & Gap (\%) \\
+        \midrule
+        (5, 25, 15, 5)   & \textbf{37.01} & 0.00 & 76.92  & 0.00  \\
+        (5, 25, 15, 10)   & 100.08 & 0.00 & 100.21  & 0.00  \\
+        (5, 30, 15, 5)   & \textbf{37.43}  & 0.00 & 100.15  & 0.00  \\
+        (5, 35, 15, 5)  & 100.14  & 0.00 & 100.14  & 0.00 \\
+        (10, 25, 25, 5) & 100.24 & 0.00 & 100.07 & 0.00 \\
+        (20, 60, 50, 5) & 100.32 & 0.00 & 100.24 & 0.00 \\
+        % (20, 1000, 500, 5) & & & & \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+We observe that most instances can be solved to near optimality within 100 seconds. However, our method performs better than the benchmark method in larger instances in solving efficiency, while similarly in small cases. It's noteworthy that we didn't change the parameter of \textbf{MIPGap} of the solver, leading to the fact that the Gap value converges to 0.00 while the solver doesn't stop since the exploration of branch-and-bound tree isn't finished. Based on this observation, we suggest that one can set a small target \textbf{MIPGap} for the solver to derive a near optimal value (possibly optimal in most cases) within a relatively short duration.
+
+\section{Conclusion and recommendations}\label{sec:conclusion-and-recommendations}
+
+We propose an optimisation model to help stakeholders determine the optimal plan of truck rental and scheduling plans to fulfill demands in different scenarios. We focus on minimizing the total costs including rental, holding and penalty costs, while some practical constraints are considered. With the support of an advanced solver, this IP model can be solved to optimality within 100 seconds, fully meeting the efficiency requirements of modern business operations.
+
+Furthermore, some useful techniques are applied to improve the solving efficiency. Synthetic data are made to test the performance of the improved method and a benchmark provided by standard Gurobi. Based on our numerical results, we notice that encourage the solver to branch significant variables with higher priority and search for valid cuts aggressively are beneficial to accelerate the convergence.
+
+Some managerial insights are derived through numerical experiments supported by real datasets:
+
+... waiting for section 6.
+
+
+
+\section{Individual contributions}\label{sec:individual-contributions}
+\textbf{Yitian Wang}
+\begin{itemize}
+    \item Came up with the initial proposal that was submitted.
+    \item Synthetic data creation.
+    \item Solution strategy design and computational experiments design.
+    \item Wrote Computational Case Study portion of the notebook.
+    \item Wrote Computation Case Study portion of the report.
+\end{itemize}
+
+\textbf{Dean Soste}
+\begin{itemize}
+    \item Wrote Case Study notebook including data loading and model formulation.
+    \item Conducted research into trucks and goods to hand-craft realistic demand patterns, truck storage capacities, holding and shortage costs.
+    \item Co-ordinated group and facilitated meetings.
+    \item Suggested the pivot towards a realistic business scenario (Black Friday) and increasing the complexity of the model toward a multi-period model.
+    \item Wrote the Introduction, Problem Definition, Literature Review and Data sections of the report.
+\end{itemize}
+
+\textbf{Tony Yue}
+\begin{itemize}
+\end{itemize}
+
+\textbf{Zhouyi Cheng}
+\begin{itemize}
+\end{itemize}
+
+\textbf{Abdullah Alsuwat}
+\begin{itemize}
+\end{itemize}
+
+\textbf{Sahar Bahalgardi}
+\begin{itemize}
+\end{itemize}
+
+
+
+
+
+\begin{thebibliography}{99}
+
+\bibitem{zheng1991}
+Zheng, Y., Federgruen, A. (1991)
+FINDING OPTIMAL (s, S) POLICIES IS ABOUT AS SIMPLE AS EVALUATING A SINGLE POLICY. \textit{Operations Research}, 39(4),  654--665.
+Retrieved from https://business.columbia.edu/sites/default/files-efs/pubfiles/4030/federgruen\_finding.pdf
+
+\bibitem{anvyl2023black}
+Anvyl (2023).
+5 Black Friday \& Cyber Monday Supply Chain Challenges and How to Beat Them.
+Retrieved from https://anvyl.com/blog/5-black-friday-cyber-monday-supply-chain-challenges/
+
+\bibitem{sawikt2011scheduling}
+Sawik, T. (2011). \textit{Scheduling in Supply Chains Using Mixed Integer Programming}.
+John Wiley \& Sons.
+
+\bibitem{denton2005methods}
+Denton, B., Forrest, J., \& Milne, R. J. (2005).
+Methods for solving a mixed integer program for semiconductor supply chain optimization at IBM. \textit{Interfaces}, 35(5), 386--399.
+
+\bibitem{saha2017mixed}
+Saha, A., \& Asadujjaman, M. (2017).
+A Mixed Integer Linear Programming Model for Solving Closed Loop Supply Chain Problems. \textit{International Journal of Supply Chain Management}, 6(3), 259--268.
+
+\bibitem{mahdavi2014multi}
+Mahdavi, I., Paydar, M. M., Solimanpur, M., \& Heidarzade, A. (2014).
+Multi-Item Multiperiodic Inventory Control Problem with Variable Demand and Discounts: A Particle Swarm Optimization Algorithm. \textit{The Scientific World Journal}, 2014.
+
+\bibitem{mdpi2025inventory}
+Jorge Vicente, J. (2025).
+Optimizing Supply Chain Inventory: A Mixed Integer Linear Programming Approach. \textit{Systems}, 13(1), 33.
+Retrieved from https://www.mdpi.com/2079-8954/13/1/33
+
+\bibitem{poormoaied2021inventory}
+Poormoaied, S., \& Demirci, E. Z. (2021).
+Inventory decision in a periodic review inventory model with two complementary products. \textit{Annals of Operations Research}, 302(2), 517--540.
+
+\bibitem{researchgate2024optimizing}
+ResearchGate (2024).
+Optimizing supply chain networks using mixed integer linear programming (MILP).
+DOI: 10.13140/RG.2.2.36574.48963
+
+\bibitem{sc247consumer}
+Supply Chain 24/7 (2024).
+How Consumer Trends Are Reshaping Black Friday and Supply Chains.
+Retrieved from https://www.supplychain247.com/article/black-friday-new-consumer-retail-habits-supply-chain
+
+\bibitem{scmag2024black}
+Supply Chain Magazine (2024).
+Black Friday: Reinforcing Supply Chains to Meet Demand.
+Retrieved from https://supplychaindigital.com/digital-supply-chain/how-supply-chains-can-meet-black-friday-demand
+
+\bibitem{vazquez2021mixed}
+Vázquez-Noguerol, M., Comesaña-Benavides, J., Poler, R., \& Prado-Prado, J. C. (2021).
+A mixed integer linear programming model to support e-fulfillment strategies in warehouse-based supermarket chains. \textit{Central European Journal of Operations Research}, 30, 1369--1402.
+
+\bibitem{you2008mixed}
+You, F., \& Grossmann, I. E. (2008).
+Mixed-Integer Nonlinear Programming Models and Algorithms for Large-Scale Supply Chain Design with Stochastic Inventory Management. \textit{Industrial \& Engineering Chemistry Research}, 47(20), 7802--7817.
+
+\bibitem{qiu2017optimizing}
+Qiu, R., Sun, M., \& Lim, Y. F. (2017).
+Optimizing (s, S) Policies for Multi-period Inventory Models with Demand Distribution Uncertainty: Robust Dynamic Programming Approaches. \textit{European Journal of Operational Research}, 261(3), 880--892.
+
+\bibitem{holdingcosts}
+Zoho.com (2024).
+What is Carry Cost?
+Retrieved from https://www.zoho.com/inventory/academy/inventory-management/what-is-carrying-cost.html
+
+\bibitem{shortagecosts}
+Unleashedsoftware.com (2024).
+What is a Good Profit Margin?
+Retrieved from https://www.unleashedsoftware.com/inventory-accounting-guide/what-is-a-good-profit-margin/
+
+\end{thebibliography}
+
+
+
+\end{document}
