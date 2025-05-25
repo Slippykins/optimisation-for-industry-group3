@@ -8,6 +8,8 @@
 \usepackage{multicol}
 \usepackage{booktabs}
 \usepackage{caption}  
+\usepackage{tabularx}
+\usepackage{amsfonts}
 
 \geometry{margin=1in}
 
@@ -30,8 +32,6 @@ Distribution planning during promotional periods represents one of the most chal
 When demand can surge to 10 times normal levels within a single day, traditional inventory and transportation strategies often fail, leading to either costly stock-outs or excessive inventory holding costs.
 This project examines how mixed-integer programming can optimise distribution decisions for electronics retailers during Black Friday, one of the year's most intense promotional period.
 
-\subsection{Business Context and Motivation}\label{subsec:business-context-and-motivation}
-
 Black Friday has evolved from a single-day sales event into a week-long phenomenon that tests the limits of retail supply chains.
 For electronics retailers like JB Hi-Fi, Harvey Norman, and Best Buy, success during this period can determine annual profitability.
 The challenge extends beyond simply having enough inventory-retailers must position the right products at the right locations while managing constrained transportation capacity and escalating logistics costs.
@@ -43,39 +43,12 @@ Our study is motivated by three key industry trends:
     \item The growing cost of logistics capacity during peak periods forces retailers to make strategic trade-offs between service levels and operational efficiency.
 \end{itemize}
 
-\subsection{Problem Overview}\label{subsec:problem-overview}
-
-We model a small-scale realistic distribution network comprising 5 warehouses serving 5 retail stores over a 7-day Black Friday period.
+We model a small-scale distribution network comprising 5 warehouses serving 5 retail stores over a 7-day Black Friday period.
 The network must distribute three representative products: high-value smartphones experiencing 100-fold day-on-day demand increases, headphones with concentrated Black Friday purchasing, and earphones facing obsolescence risks from heavy discounting.
 These products capture the diversity of challenges retailers face, from managing extreme demand spikes to balancing inventory risks for promotional items.
 
 The optimisation problem addresses two fundamental decisions: how to manage truck fleet capacity (comparing flexible daily rentals against economical weekly contracts) and how to route products through the network over time.
 With truck availability limited to 10 vehicles per day and each truck constrained to 10,500 volume units, the model must balance transportation efficiency against inventory costs while ensuring product availability during demand surges.
-
-\subsection{Technical Approach}\label{subsec:technical-approach}
-
-We formulate the problem as a mixed-integer program that minimizes total operational costs across transportation, truck rental, inventory holding, and stock-out penalties.
-The discrete nature of truck quantities and the integrality of product shipments create a complex optimisation landscape with millions of potential solutions.
-Our approach leverages modern MIP solvers (Gurobi) enhanced with problem-specific solution strategies including strategic branching priorities and aggressive cut generation.
-
-Beyond the base case study, we conduct a systematic scale analysis examining how the solution approach performs on problems ranging from small regional networks (2 warehouses, 3 retailers) to large national operations (20 warehouses, 20 retailers).
-This computational study provides critical insights into the scalability of monolithic optimisation approaches and identifies when decomposition strategies become necessary.
-
-\subsection{Project Contributions}\label{subsec:project-contributions}
-
-This project makes three primary contributions to supply chain optimisation practice:
-\begin{itemize}
-    \item \textbf{Real-World Parameterization}: Unlike studies using synthetic data, we ground our analysis in actual product specifications, industry-standard cost structures, and observed Black Friday demand patterns.
-This includes sourcing real product dimensions, incorporating actual truck rental rates, and calibrating holding costs to reflect Black Friday warehouse premiums.
-
-    \item \textbf{Comparative Scenario Analysis}: We systematically compare four operational scenarios combining different fleet management strategies and market conditions.
-This 2×2 analysis framework provides actionable insights for retailers facing decisions about transportation flexibility versus cost efficiency.
-
-    \item \textbf{Scalability Assessment}: Through our scale study spanning problem sizes from 18 to 6,000 decision variables, we establish practical guidelines for when integrated optimisation remains viable versus when decomposition approaches become necessary.
-
-\end{itemize}
-
-\subsection{Report Structure}\label{subsec:report-structure}
 
 Following this introduction, Section~\ref{sec:problem-definition} formally defines the distribution optimisation problem, explaining key assumptions and simplifications.
 
@@ -104,14 +77,17 @@ A retailer operating multiple warehouses must efficiently distribute products to
 
 \subsection{Problem Context}\label{subsec:problem-context}
 
-The retailer manages a network of 5 warehouses serving 5 retail stores, distributing three categories of consumer electronics: high-value smartphones, mid-range headphones, and heavily discounted earphones.
+The retailer manages a network of 5 warehouses serving 5 retail stores, distributing three representative categories of consumer electronics: high-value smartphones, mid-range headphones, and heavily discounted earphones.
+We chose to limit the scope of our case study to three representative products as we wanted to hand-craft data for a more realistic, tailored problem.
 Each product category exhibits distinct demand patterns during Black Friday week, with:
 
 \begin{itemize}
     \item Smartphones experiencing almost no demand prior to Black Friday as consumers await heavy discounts followed by a sustained 10x demand over the weekend,
     \item Headphones showing a moderate increase in demand for Black Friday (4x), and
-    \item Earphones also showing a 10x in demand over normal levels with significant drop-off over the weekend.
+    \item Earphones showing a 100x in daily demand between Thursday and Black Friday.
 \end{itemize}
+
+The full demand profiles for these products can be seen in Table~\ref{tab:table2}.
 
 The central challenge is determining optimal truck fleet management and product distribution strategies that minimise total operational costs while meeting customer demand.
 This requires coordinating decisions across multiple time periods, balancing immediate needs against future demand spikes and the resulting costs from these decisions.
@@ -156,7 +132,7 @@ To make the problem tractable while maintaining practical relevance, we adopt se
 While real demand contains uncertainty, the promotional nature of Black Friday creates relatively predictable patterns.
 Furthermore, adding uncertainty to demand forecasts would overcomplicate the problem and detract from the results and learnings of the study being performed.
 
-    \item \textbf{No Lateral Trans-shipments}: Products cannot be transferred between retail stores.
+    \item \textbf{No Inter-Retailer Shipments}: Products cannot be transferred between retail stores.
 This reflects common practice where inter-store transfers are logistically complex and time-consuming during peak periods.
 
     \item \textbf{Unlimited Warehouse Supply}: Warehouses have sufficient inventory to meet all distribution requests.
@@ -188,6 +164,8 @@ We analyze four variants of the base problem, creating a 2×2 matrix of scenario
 
 These variants allow us to examine how optimal distribution strategies change under different operational constraints and market conditions, providing robust insights for retail decision-makers.
 This also allows for companies to adapt to prevailing market conditions and assess the cost/benefit of a flexible fleet during highly-volatile periods.
+
+The data for these variants is available in Section~\ref{sec:data}, \textit{Data}.
 
 \subsection{Relevance and Applications}\label{subsec:relevance-and-applications}
 
@@ -381,6 +359,96 @@ Further information on the Computational Case Study, including scales studied an
 
 \section{Model}\label{sec:model}
 
+The following is the specification of the model for weekly truck rentals.
+To see the modifications required to support daily truck rental, see Section~\ref{subsec:modifications-for-daily-truck-rental} \textit{Modifications for Daily Truck Rental}.
+To simplify the model, we introduce two dummy decision variables \textit{carried\_retailer\_stock} and \textit{short\_retailer\_stock} to:
+\begin{itemize}
+    \item make calculation of holding and shortage costs easier,
+    \item to enforce supply-demand balance in each period.
+\end{itemize}
+
+\subsection{Parameters}\label{subsec:parameters}
+\begin{itemize}
+    \item $W$: set of warehouses, $W = \{1, \hdots, n_w\}, n_w\in \mathbb{N}$.
+    \item $G$: set of distinct goods, $G = \{1, \hdots, n_g\}, n_g \in \mathbb{N}$.
+    \item $R$: set of retailers, $R = \{1, \hdots, n_r\}, n_r \in \mathbb{N}$.
+    \item $P$: set of periods (number of days), $P = \{1, \hdots, n_p\}, n_p \in \mathbb{N}$.
+    \item $K_T$: storage capacity of each truck, $K_T \in \mathbb{N}$.
+    \item $R_T$: daily rental cost of each truck, $R_T \in \mathbb{N}$.
+    \item $M_T$: maximum number of trucks that can be rented, $M_T \in \mathbb{N}$.
+    \item $K_g$: size of good $g$, $K_g \in \mathbb{N}$.
+    \item $H_g$: holding cost of good $g$, $H_g \geq 0$.
+    \item $S_g$: shortage cost of good $g$, $S_g \geq 0$.
+    \item $T_{w,r,g}$: transportation cost of good $g$ from warehouse $w$ to retailer $r$, $T_{w,r,g} \geq 0$.
+    \item $D_{r,g,p}$: unit demand of good $g$ at retailer $r$ in period $p$, $D_{r,g,p} \geq 0$.
+\end{itemize}
+
+\subsection{Variables and Model}\label{subsec:variables-and-model}
+\begin{itemize}
+    \item $r$: total number of trucks rented for the week, $r \in \mathbb{N}$.
+    \item $a_{w,p}$: number of trucks allocated to warehouse $w$ in period $p$, $a_{w,p} \in \mathbb{N}$.
+    \item $t_{w,r,g,p}$: amount of good $g$ transported from warehouse $w$ to retailer $r$ in period $p$, $t_{w,r,g,p} \in \mathbb{N}$.
+    \item $h_{r,g,p}$: dummy variable to track the amount of good $g$ held at retailer $r$ at start of period $p$ (ie. left from previous day), $h_{r,g,p} \in \mathbb{N}$.
+    \item $s_{r,g,p}$: dummy variable to track the amount of good $g$ short of demand at retailer $r$ in period $p$, $s_{r,g,p} \in \mathbb{N}$.
+\end{itemize}
+
+Let
+
+\begin{alignat}{2}
+    C_t = & \sum_{w \in W}\sum_{r \in R}\sum_{g \in G}\sum_{p \in P} T_{w,r,g} t_{w,r,g,p}  & \forall w \in W, r \in R, g \in G, p \in P & \quad \text{(Total transport costs)} \\
+    C_s = & \sum_{r \in R}\sum_{g \in G}\sum_{p \in P} S_{g} s_{r,g,p}  & \forall r \in R, g \in G, p \in P & \quad \text{(Total shortage costs)}\\
+    C_h = & \sum_{r \in R}\sum_{g \in G}\sum_{p \in P} H_{g} h_{r,g,p}  & \forall r \in R, g \in G, p \in \{P \cup \{n_p + 1\}\} & \quad \text{(Total holding costs)}\\
+    C_r = & \sum_{w \in W}\sum_{p \in P} R_T a_{w,p}  & \forall w \in W, p \in P & \quad \text{(Total truck rental costs)}
+\end{alignat}
+
+Then our model is
+
+\begin{alignat}{2}
+    \min \quad & C_t + C_s + C_h + C_r & &  \quad \text{(Minimise total cost of system)},\\
+    \text{s.t.} \quad & \sum_{w\in W} a_{w,p} = r, & \quad & \forall p \in P, \quad \text{(Daily truck allocation = hired)},\\
+    & \sum_{g \in G} K_g \sum_{r \in R} t_{w,r,g,p} \leq a_{w,p} * K_T, & \quad & \forall w \in W, p \in P, \quad \text{(Total sent less than capacity)},\\
+    & h_{r,g,1} =0, & \quad & \forall r \in R, g \in G, \quad \text{(Retailers start with no stock)},\\
+    & s_{r,g,p} \geq D_{r,g,p} - h_{r,g,p} - \sum_{w \in W} t_{w,r,g,p}, & \quad & \forall r \in R, g \in G, p \in P \quad \text{(Shortage defn)},\\
+    & h_{r,g,(p+1)} = \sum_{w \in W} t_{w,r,g,p} - D_{r,g,p} + h_{r,g,p} + s_{r,g,p}, & \quad & \forall r \in R, g \in G, p \in P, \quad \text{(Held goods defn)},\\
+    & r \geq 0 & \quad & \quad \text{(Scope of variables)},\\
+    & a_{w,p} \geq 0 & \quad & \forall w \in W, p \in P, \quad \text{(Scope of variables)},\\
+    & t_{w,r,g,p} \geq 0 & \quad & \forall w \in W, r \in R, g \in G, p \in P \quad \text{(Scope of variables)},\\
+    & h_{r,g,p} \geq 0 & \quad & \forall r \in R, g \in G, p \in P \quad \text{(Scope of variables)},\\
+    & s_{r,g,p} \geq 0 & \quad & \forall r \in R, g \in G, p \in P \quad \text{(Scope of variables)}.
+\end{alignat}
+
+\textbf{The objective function} minimises the total cost of the system.
+
+\textbf{The first constraint} ensures all trucks allocated to warehouses within a period equals the total amount of trucks hired (ie. no unused trucks).
+
+\textbf{The second constraint} ensures the total size of goods sent from each warehouse does not exceed the total capacity of all trucks assigned to that warehouse.
+
+\textbf{The third constraint} specifies that each retailer starts with no stock on hand.
+
+\textbf{The fourth constraint} ensures that the shortage of a particular good for a particular store in a particular period is at least equal to the unmet demand.
+Since any additional units of shortage will contribute positively to the cost, combining this constraint with the objective function gives equality (ie. that shortage is equal to unmet demand).
+
+\textbf{The fifth constraint} ensures the total units of a good left at a particular retailer in a particular period is equal to the amount held initially, plus the amount sent to the store, minus the demand of the day plus the shortage.
+Equivalently, this constraint says that if shortage is zero, the change in held goods is equal to supply minus demand, and if shortage is positive then by constraint 4 the amount of held goods must be zero.
+
+
+\subsection{Modifications for Daily Truck Rental}\label{subsec:modifications-for-daily-truck-rental}
+For daily truck rental, we make two small modifications.
+We must modify the variable $r$ to now allow for daily variations, and we must modify the first constraint to take into account this variability.
+The variable $r$ becomes $r_p$:
+
+\begin{itemize}
+    \item $r_p$: total number of trucks rented for each period $p$, $r_p \geq 0$.
+\end{itemize}
+
+And our first constraint becomes
+
+\begin{alignat}{2}
+     & \sum_{w\in W} a_{w,p} = r_p, & \quad & \forall p \in P, \quad \text{(Daily truck allocation = hired)}
+\end{alignat}
+
+Note that we used separate instance data for the daily truck rental scenarios (\textit{daily\_trucks\_high\_cost}, \textit{daily\_trucks\_low\_cost}), and so the 50\% daily rental premium is already captured in a change to $R_T$.
+
 
 \section{Solution strategy}\label{sec:solution-strategy}
 
@@ -432,15 +500,170 @@ Most of the cuts derived by this step are different from Gomory cuts, which are 
 
 \section{Results and analysis}\label{sec:results-and-analysis}
 
-As the result shows, when the cost of renting trucks is high and trucks are scheduled on a daily basis, the model tries its best to meet all the demands (and succeeds) to avoid the massive shortage cost. Truck utilization for each warehouse at each period is close to one, which is well expected for the condition where trucks are expensively rented daily, as wasting the capacity of trucks is very unprofitable. Holding cost is relatively low comparing to the truck renting cost and transportation cost, as trucks can be rented contingently and surplus in retailers can usually be avoided.
+\subsection{Results}\label{subsec:results2}
+Tables 1 to 6 presents the optimized total cost, daily cost and average truck utilization in each scenario.\\
+\begin{table}[ht]
+    \centering
+    \begin{tabularx}{1\textwidth}{
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | }
+  \hline
+  Scenario & Number of Trucks (Each period) &Truck Hire Cost & Transport- -ation Cost & Shortage Cost & Holding Cost & Total Cost \\
+  \hline
+  High Rent, Daily & 5,2,2,10,10, 4,4 & 11100.0 & 11654.7 & 0.0 & 6464.0	& 29218.7 \\
+  \hline
+  Low Rent, Daily & 5,2,2,10,10, 4,5 & 5700.0 & 11621.2 & 0.0 & 6200.0 & 23521.2 \\
+  \hline
+  High Rent, Weekly & 10 & 14000.0	& 11518.8 & 0.0 & 6200.0 & 31718.8 \\
+  \hline
+  Low Rent, Weekly & 10 & 7000.0 & 11517.9	& 0.0 & 6200.0 & 24717.9 \\
+  \hline
+\end{tabularx}
+    \caption{Minimized cost from the model}\label{tab:table3}
+\end{table}
+
+\\
+\begin{table}[ht]
+    \centering
+    \begin{tabularx}{1\textwidth}{
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | }
+  \hline
+  Day & Truck Hire Cost & Transport- -ation Cost & Shortage Cost & Holding Cost & Total Cost \\
+  \hline
+  Day 1 & 1500.0 & 708.0 & 0.0 & 0.0 & 2208.0 \\
+  \hline
+  Day 2 & 600.0 & 355.4 & 0.0 & 0.0 & 955.4 \\
+  \hline
+  Day 3 & 3000.0 & 235.9 & 0.0 & 0.0 & 3235.9 \\
+  \hline
+  Day 4 & 3000.0 & 680.1 & 0.0 & 776.0 & 4456.1 \\
+  \hline
+  Day 5 & 1200.0 & 4754.4 & 0.0 & 5552.0 & 11506.4 \\
+  \hline
+  Day 6 & 1200.0 & 2827.0 & 0.0 & 64.0 & 4091.0 \\
+  \hline
+  Day 7 & 1200.0 & 2093.9 & 0.0 & 72.0 & 3365.9 \\
+  \hline
+\end{tabularx}
+    \caption{Minimized daily cost, when trucks are rented daily and expensive}\label{tab:table4}
+\end{table}
+\\
+\begin{table}[ht]
+    \centering
+    \begin{tabularx}{1\textwidth}{
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | }
+  \hline
+  Day & Truck Hire Cost & Transport- -ation Cost & Shortage Cost & Holding Cost & Total Cost \\
+  \hline
+  Day 1 & 750.0 & 708.0 & 0.0 & 0.0 & 1458.0 \\
+  \hline
+  Day 2 & 300.0 & 355.4 & 0.0 & 0.0 & 655.4 \\
+  \hline
+  Day 3 & 300.0 & 237.9 & 0.0 & 0.0 & 537.9 \\
+  \hline
+  Day 4 & 1500.0 & 733.7 & 0.0 & 712.0 & 2949.7 \\
+  \hline
+  Day 5 & 1500.0 & 4687.5 & 0.0 & 5488.0 & 11675.5 \\
+  \hline
+  Day 6 & 600.0 & 2830.9 & 0.0 & 0.0 & 3430.9 \\
+  \hline
+  Day 7 & 750.0 & 2067.8 & 0.0 & 0.0 & 2817.8 \\
+  \hline
+\end{tabularx}
+    \caption{Minimized daily cost, when trucks are rented daily and less expensive}\label{tab:table5}
+\end{table}
+\\
+\begin{table}[ht]
+    \centering
+    \begin{tabularx}{1\textwidth}{
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | }
+  \hline
+  Day & Truck Hire Cost & Transport- -ation Cost & Shortage Cost & Holding Cost & Total Cost \\
+  \hline
+  Day 1 & 2000.0 & 704.0 & 0.0 & 0.0 & 2704.0 \\
+  \hline
+  Day 2 & 2000.0 & 325.5 & 0.0 & 0.0 & 2325.5 \\
+  \hline
+  Day 3 & 2000.0 & 228.0 & 0.0 & 0.0 & 2228.0 \\
+  \hline
+  Day 4 & 2000.0 & 616.2 & 0.0 & 712.0 & 3328.2 \\
+  \hline
+  Day 5 & 2000.0 & 4802.1 & 0.0 & 5488.0 & 12290.1 \\
+  \hline
+  Day 6 & 2000.0 & 2785.0 & 0.0 & 0.0 & 4785.0 \\
+  \hline
+  Day 7 & 2000.0 & 2058.0 & 0.0 & 0.0 & 4058.0 \\
+  \hline
+\end{tabularx}
+    \caption{Minimized daily cost, when trucks are rented weekly and expensive}\label{tab:table6}
+\end{table}
+\\
+\begin{table}[ht]
+    \centering
+    \begin{tabularx}{1\textwidth}{
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | >{\centering\arraybackslash}X | }
+  \hline
+  Day & Truck Hire Cost & Transport- -ation Cost & Shortage Cost & Holding Cost & Total Cost \\
+  \hline
+  Day 1 & 1000.0 & 704.0 & 0.0 & 0.0 & 1704.0 \\
+  \hline
+  Day 2 & 1000.0 & 325.5 & 0.0 & 0.0 & 1325.5 \\
+  \hline
+  Day 3 & 1000.0 & 225.0 & 0.0 & 0.0 & 1225.0 \\
+  \hline
+  Day 4 & 1000.0 & 668.9 & 0.0 & 712.0 & 2380.9 \\
+  \hline
+  Day 5 & 1000.0 & 4751.5 & 0.0 & 5488.0 & 11239.5 \\
+  \hline
+  Day 6 & 1000.0 & 2785.0 & 0.0 & 0.0 & 3785.0 \\
+  \hline
+  Day 7 & 1000.0 & 2058.0 & 0.0 & 0.0 & 3058.0 \\
+  \hline
+\end{tabularx}
+    \caption{Minimized daily cost, when trucks are rented weekly and less expensive}\label{tab:table7}
+\end{table}
+\\
+
+\begin{table}[ht]
+    \centering
+    \begin{tabularx}{1\textwidth}{
+  | >{\centering\arraybackslash}X
+  | >{\centering\arraybackslash}X
+  | }
+  \hline
+  Scenario & Average Truck Utilization \\
+  \hline
+  High Rent, Daily & 0.98 \\
+  \hline
+  Low Rent, Daily & 0.95 \\
+  \hline
+  High Rent, Weekly & 0.54 \\
+  \hline
+  Low Rent, Weekly & 0.54 \\
+  \hline
+\end{tabularx}
+    \caption{Average truck utilization comparison}\label{tab:table8}
+\end{table}
+
+\subsection{Analysis}\label{subsec:analysis}
+
+As the result shows, when the cost of renting trucks is high and trucks are scheduled on a daily basis, the model tries its best to meet all the demands (and succeeds) to avoid the massive shortage cost. Truck utilization for each warehouse at each period is close to 1 (See table 6), which is well expected for the condition where trucks are expensively rented daily, as wasting the capacity of trucks is very unprofitable. Holding cost is relatively low comparing to the truck renting cost and transportation cost, as trucks can be rented contingently and surplus in retailers can usually be avoided.
 
 When the truck renting cost is low, it would be even more profitable to rent trucks contingently, and truck utilization can be more relaxed, as the ratio of profit gained by reducing the number of trucks rented to reducing carried goods is relatively lower compared to when trucks are expensive to rent (thus the model should favor more on reducing holding cost). This is reflected in the behaviour of the model as expected, where at period 6 (the seventh day), one more truck is rented comparing to the case when renting cost is high. This has enabled the warehouses to send less products in the period before (while still meeting all demands, thus in surplus), resulting a less total holding cost.
 
-When trucks are rented on a weekly basis, the model still decides to minimize shortage cost as much as possible, even when trucks are expensive to hire. The main difference to the case where trucks are rented daily, is that during the periods when demands are low, there would be idle trucks. Therefore, truck utilization can be relaxed, and the shipments can be made generally when demanded to reduce holding cost, and there is more freedom to decide on transportation schedule to reduce transportation cost. These effects are reflected on the results, that holding cost and transportation cost are lower than in the case where trucks are rented daily, and to a slight extent offsets the increased truck renting cost due to the change in renting schedule.
+When trucks are rented on a weekly basis, the model still decides to minimize shortage cost as much as possible, even when trucks are expensive to hire. The main difference to the case where trucks are rented daily, is that during the periods when demands are low, there would be idle trucks. Therefore, truck utilization can be relaxed (see table 6), and the shipments can be made generally when demanded to reduce holding cost, and there is more freedom to decide on transportation schedule to reduce transportation cost. These effects are reflected on the results, that holding cost and transportation cost are lower than in the case where trucks are rented daily, and to a slight extent offsets the increased truck renting cost due to the change in renting schedule.
 
-When the renting cost of trucks is low, it is interesting to see that the final cost only changes due to halved truck renting cost. This indicates that the decision for transportation and supplying the retailers are already optimal to ensure that the shortage cost is minimal.
-
-
+When the renting cost of trucks is low, it is interesting to see that the final cost only changes due to halved truck renting cost.
+This indicates that the decision for transportation and supplying the retailers are already optimal to ensure that the shortage cost is minimal. In fact, holding costs only presents on day 4 and 5 (holding cost is induced from the surplus on previous day) in order to meet the peak demand on Friday.
 
 
 
@@ -531,18 +754,34 @@ While both of them cannot dominate the other, in future work, we will attempt to
 
 \section{Conclusion and recommendations}\label{sec:conclusion-and-recommendations}
 
-We propose an optimisation model to help stakeholders determine the optimal plan of truck rental and scheduling plans to fulfill demands in different scenarios.
-We focus on minimising the total costs including rental, holding and penalty costs, while some practical constraints are considered.
-With the support of an advanced solver, this IP model can be solved to optimality within 100 seconds, fully meeting the efficiency requirements of modern business operations.
+We propose an optimization model to help stakeholders determine the optimal plan of truck rental and scheduling plans to fulfill demands in different scenarios.
+We focus on minimizing the total costs including rental, holding and penalty costs, while some practical constraints are considered.
+With the support of an advanced solver, this IP model can be solved to optimality within 15 seconds under different instance sizes, fully meeting the efficiency requirements of modern business operations.
 
-Furthermore, some useful techniques are applied to improve the solving efficiency.
+Furthermore, we attempt to propose some useful techniques to improve the solving efficiency.
 Synthetic data are made to test the performance of the improved method and a benchmark provided by standard Gurobi.
-Based on our numerical results, we notice that encourage the solver to branch significant variables with higher priority and search for valid cuts aggressively are beneficial to accelerate the convergence.
+Based on our numerical results, we notice that encourage the solver to branch significant variables with higher priority and search for valid cuts aggressively are beneficial to accelerate the convergence for medium scales.
+However, its superiority isn't obvious under other scales.
+In the future, we will explore other stable strategies to contribute to this field.
 
 Some managerial insights are derived through numerical experiments supported by real datasets:
+\begin{itemize}
+    \item When truck rental is expensive and a daily pattern is applied, the model focuses on avoiding shortage costs by fully utilizing the rented trucks.
+    \item When truck rental is cheap and a daily pattern is applied, the model seeks a more flexible transport plan to minimize holding costs once most demands are met.
+    \item When truck rental is expensive and a weekly pattern is applied, some idle trucks are tolerated, while a more flexible delivery plan is preferred.
+    \item When truck rental is cheap and a weekly pattern is applied, more trucks can be rented, allowing a more flexible delivery plan, which leads to a near-optimal rental and delivery strategy.
+\end{itemize}
 
-... waiting for section 6.
+In summary, our model adapts its decisions to different cost structures, demonstrating its effectiveness in making strategic choices across varying environments.
 
+In the future, this model can be improved by considering the following effects:
+\begin{itemize}
+    \item Several emerging innovations, such as parcel lockers and drones, have been developed to improve last-mile delivery.
+    Exploring the integration of these technologies into the model could yield valuable contributions.
+    \item The surge in demand during Black Friday is difficult to predict.
+    In this report, a scaling factor was applied.
+    However, developing a more robust model in the future could improve order fulfillment.
+\end{itemize}
 
 
 
@@ -551,39 +790,47 @@ Some managerial insights are derived through numerical experiments supported by 
 
 
 \section{Individual contributions}\label{sec:individual-contributions}
-\textbf{Yitian Wang}
 \begin{itemize}
-    \item Came up with the initial proposal that was submitted.
-    \item Synthetic data creation.
-    \item Solution strategy design and computational experiments design.
-    \item Wrote Computational Case Study portion of the notebook.
-    \item Wrote Computation Case Study portion of the report.
+    \item \textbf{Yitian Wang}
+    \begin{itemize}
+        \item Came up with the initial proposal that was submitted.
+        \item Synthetic data creation.
+        \item Solution strategy design and computational experiments design.
+        \item Wrote Computational Case Study portion of the notebook.
+        \item Wrote Computation Case Study portion of the report, Section~\ref{sec:computational-scale-study}.
+    \end{itemize}
+
+    \item \textbf{Dean Soste}
+    \begin{itemize}
+        \item Wrote Case Study notebook including data loading and model formulation.
+        \item Conducted research into trucks and goods to hand-craft realistic demand patterns, truck storage capacities, holding and shortage costs.
+        \item Co-ordinated group and facilitated meetings.
+        \item Suggested the pivot towards a realistic business scenario (Black Friday) and increasing the complexity of the model toward a multi-period model.
+        \item Wrote the Introduction (Section~\ref{sec:introduction}), Problem Definition (Section~\ref{sec:problem-definition}), Literature Review (Section~\ref{sec:literature-review}) and Data (Section~\ref{sec:data}) sections of the report.
+    \end{itemize}
+
+    \item \textbf{Tony Yue}
+    \begin{itemize}
+        \item Created the original dataset defined from the proposal.
+        \item Created the presentation slides.
+    \end{itemize}
+
+    \item \textbf{Zhouyi Cheng}
+    \begin{itemize}
+        \item Wrote the Results and Analysis section of the report (Section~\ref{sec:results-and-analysis})
+    \end{itemize}
+
+    \item \textbf{Abdullah Alsuwat}
+    \begin{itemize}
+        \item Wrote the Conclusion and Recommendations section of the report (Section~\ref{sec:conclusion-and-recommendations})
+    \end{itemize}
+
+    \item \textbf{Sahar Bahalgardi}
+    \begin{itemize}
+        \item Wrote the Model section of the report (Section~\ref{sec:model})
+    \end{itemize}
 \end{itemize}
 
-\textbf{Dean Soste}
-\begin{itemize}
-    \item Wrote Case Study notebook including data loading and model formulation.
-    \item Conducted research into trucks and goods to hand-craft realistic demand patterns, truck storage capacities, holding and shortage costs.
-    \item Co-ordinated group and facilitated meetings.
-    \item Suggested the pivot towards a realistic business scenario (Black Friday) and increasing the complexity of the model toward a multi-period model.
-    \item Wrote the Introduction, Problem Definition, Literature Review and Data sections of the report.
-\end{itemize}
-
-\textbf{Tony Yue}
-\begin{itemize}
-\end{itemize}
-
-\textbf{Zhouyi Cheng}
-\begin{itemize}
-\end{itemize}
-
-\textbf{Abdullah Alsuwat}
-\begin{itemize}
-\end{itemize}
-
-\textbf{Sahar Bahalgardi}
-\begin{itemize}
-\end{itemize}
 
 
 
