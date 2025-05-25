@@ -29,55 +29,30 @@
 \section{Introduction}\label{sec:introduction}
 
 Distribution planning during promotional periods represents one of the most challenging problems in retail supply chain management.
-When demand can surge to 10 times normal levels within a single day, traditional inventory and transportation strategies often fail, leading to either costly stock-outs or excessive inventory holding costs.
+When demand can surge to 10 to 100 times overnight, traditional inventory and transportation strategies often fail, leading to either costly stock shortages or excessive inventory holding costs.
 This project examines how mixed-integer programming can optimise distribution decisions for electronics retailers during Black Friday, one of the year's most intense promotional period.
 
 Black Friday has evolved from a single-day sales event into a week-long phenomenon that tests the limits of retail supply chains.
 For electronics retailers like JB Hi-Fi, Harvey Norman, and Best Buy, success during this period can determine annual profitability.
-The challenge extends beyond simply having enough inventory-retailers must position the right products at the right locations while managing constrained transportation capacity and escalating logistics costs.
-
-Our study is motivated by three key industry trends:
-\begin{itemize}
-    \item The increasing concentration of sales during promotional periods means retailers cannot afford distribution failures during Black Friday.
-    \item The rise of omnichannel retail has created customer expectations for product availability that penalise stock-outs more severely than ever before.
-    \item The growing cost of logistics capacity during peak periods forces retailers to make strategic trade-offs between service levels and operational efficiency.
-\end{itemize}
+The challenge extends beyond simply having enough inventory - retailers must position the right products at the right locations while managing constrained transportation capacity and escalating logistics costs.
 
 We model a small-scale distribution network comprising 5 warehouses serving 5 retail stores over a 7-day Black Friday period.
 The network must distribute three representative products: high-value smartphones experiencing 100-fold day-on-day demand increases, headphones with concentrated Black Friday purchasing, and earphones facing obsolescence risks and heavy discounting.
 These products capture the diversity of challenges retailers face, from managing extreme demand spikes to balancing inventory risks for promotional items.
 
-The optimisation problem addresses two fundamental decisions: how to manage truck fleet capacity (comparing flexible daily rentals against economical weekly contracts) and how to route products through the network over time.
-With truck availability limited to 10 vehicles per day and each truck constrained to 10,500 volume units, the model must balance transportation efficiency against inventory costs while ensuring product availability during demand surges.
-
-Following this introduction, Section~\ref{sec:problem-definition} formally defines the distribution optimisation problem, explaining key assumptions and simplifications.
-
-Section~\ref{sec:literature-review} reviews relevant literature in supply chain optimisation, inventory management, and promotional period logistics.
-
-Section~\ref{sec:data} details our data collection methodology and parameter specifications.
-
-Section~\ref{sec:model} presents the mathematical model formulation.
-
-Section~\ref{sec:solution-strategy} describes our solution strategies for improving computational performance.
-
-Section~\ref{sec:results-and-analysis} analyses results from both the case study.
-
-Section~\ref{sec:computational-scale-study} defines and analyses the results from the computation cases study.
-
-Finally, Section~\ref{sec:conclusion-and-recommendations} provides conclusions and managerial recommendations for implementing these optimisation approaches in practice.
-
-
+The optimisation problem addresses two fundamental decisions: how to manage truck fleet capacity (comparing flexible daily rentals against cheaper weekly contracts) and how to transport products throughout the week to meet current and future demands.
+With truck availability limited to 10 vehicles per day (due to driver availability and to restrict the problem space) and each truck having a fixed capacity, the model must balance transportation against inventory costs while ensuring product availability during Black Friday demand surges.
 
 
 
 \section{Problem Definition}\label{sec:problem-definition}
 
-We address the distribution planning problem faced by electronics retailers during Black Friday promotional periods.
-A retailer operating multiple warehouses must efficiently distribute products to retail stores over a one-week period encompassing Black Friday, when demand can spike to 10 times normal levels between two subsequent days.
+We address the distribution planning problem faced by typical electronics retailers during Black Friday promotional periods.
+A retailer operating multiple warehouses must efficiently distribute products to retail stores over a one-week period encompassing Black Friday, when demand can spike 10x just between two subsequent days.
 
 \subsection{Problem Context}\label{subsec:problem-context}
 
-The retailer manages a network of 5 warehouses serving 5 retail stores, distributing three representative categories of consumer electronics: high-value smartphones, mid-range headphones, and heavily discounted earphones.
+The company manages a network of 5 warehouses serving 5 retail stores, distributing three representative categories of consumer electronics: high-value smartphones, mid-range headphones, and heavily discounted earphones.
 We chose to limit the scope of our case study to three representative products as we wanted to hand-craft data for a more realistic, tailored problem.
 Each product category exhibits distinct demand patterns during Black Friday week, with:
 
@@ -89,18 +64,14 @@ Each product category exhibits distinct demand patterns during Black Friday week
 
 The full demand profiles for these products can be seen in Table~\ref{tab:table2}.
 
-The central challenge is determining optimal truck fleet management and product distribution strategies that minimise total operational costs while meeting customer demand.
-This requires coordinating decisions across multiple time periods, balancing immediate needs against future demand spikes and the resulting costs from these decisions.
-
 \subsection{Key Decisions}\label{subsec:key-decisions}
 
-The retailer must make two interconnected sets of decisions:
+The retailer must make two decisions:
 \begin{itemize}
-    \item \textbf{Fleet Management}: Whether to commit to a fixed truck fleet for the entire week (weekly rental) or maintain flexibility to adjust fleet size daily (daily rental).
-Daily rentals offer operational flexibility at a 50\% cost premium, allowing the retailer to scale capacity for Black Friday's demand spike.
-
-\item \textbf{Distribution Planning}: How many units of each product to ship from each warehouse to each retailer in each time period.
-These decisions must account for truck capacity constraints, varying transportation costs between locations, and the trade-off between holding inventory and risking stockouts.
+    \item \textbf{Total Trucks to Rent}: How many trucks to rent for the period, capped at a maximum of 10 per day.
+Depending on the problem variant (see Problem Variants~\ref{subsec:problem-variants}), daily rentals may be fixed for the week or may be allowed to vary via daily rental at a premium.
+    \item \textbf{Distribution Planning}: How many units of each product to ship from each warehouse to each retailer in each time period.
+These decisions must account for truck capacity constraints, varying transportation costs between locations, and the trade-off between holding inventory and risking stock shortages (missed sales opportunities).
 \end{itemize}
 
 \subsection{Problem Characteristics}\label{subsec:problem-characteristics}
@@ -108,10 +79,9 @@ These decisions must account for truck capacity constraints, varying transportat
 Several factors make this problem particularly challenging:
 
 \begin{itemize}
-    \item \textbf{Extreme Demand Volatility}: Demand for earphones increases from 10 units on Thursday to 1,000 units on Black Friday - a 100-fold increase.
-Headphones show even more extreme behavior with zero demand immediately before Black Friday as customers wait for promotions.
-    \item \textbf{Capacity Constraints}: The retailer faces a hard constraint of 10 trucks per day due to driver availability.
-With each truck having a set capacity and products occupying different space, efficient packing becomes critical during peak periods.
+    \item \textbf{Extreme Demand Volatility}: Demand for each good changes dramatically throughout the week, with massive spikes on Black Friday that tend to continue throughout the weekend.
+    \item \textbf{Capacity Constraints}: The company faces a hard constraint of 10 trucks per day due to driver availability.
+With each truck having a set capacity and products occupying different space, maximising the utilisation of each truck becomes a challenge.
     \item \textbf{Heterogeneity of Goods}: Retailers and transportation companies must deal with incredibly varied goods, with significantly different characteristics in terms of shape, size, fragility, value and obsolescence.
 These characteristics heavily impact transportation considerations and the various costs faced by the retailer.
     \item \textbf{Cost Trade-offs}: The retailer must balance four competing cost components:
@@ -128,42 +98,39 @@ These characteristics heavily impact transportation considerations and the vario
 To make the problem tractable while maintaining practical relevance, we adopt several simplifications:
 
 \begin{itemize}
-    \item \textbf{Deterministic Demand}: We assume demand is known with certainty based on historical Black Friday patterns.
-While real demand contains uncertainty, the promotional nature of Black Friday creates relatively predictable patterns.
-Furthermore, adding uncertainty to demand forecasts would overcomplicate the problem and detract from the results and learnings of the study being performed.
+    \item \textbf{Deterministic Demand}: This is an unreasonable assumption, but adding uncertainty demand make the problem hard to model and difficult to understand the results.
 
-    \item \textbf{No Inter-Retailer Shipments}: Products cannot be transferred between retail stores.
-This reflects common practice where inter-store transfers are logistically complex and time-consuming during peak periods.
+    \item \textbf{No Shipments Between Retailers}: While stores in the real world may ship goods between each other to smooth over shortages and held inventory, we remove this possibility to simplify the model.
 
-    \item \textbf{Unlimited Warehouse Supply}: Warehouses have sufficient inventory to meet all distribution requests.
-This assumes proper upstream planning has positioned inventory at warehouses before Black Friday week.
+    \item \textbf{Unlimited Warehouse Supply}: We assume that there is some other upstream logistics model that has optimised warehouse stock for the Black Friday week.
 
-    \item \textbf{Single Transportation Mode}: All shipments use trucks with identical capacity.
-While retailers might use multiple transportation modes, trucks represent the dominant mode for regional distribution.
+    \item \textbf{Single Transportation Mode}: It's reasonable to assume that a company may use trucks of different sizes, but we fix all our trucks to a single size for simplicity.
+
+    \item \textbf{Representative products}: In order to keep things simple for this report, we only model three goods, and assume that these goods take up roughly 1\% of the total capacity of a 50m3 truck.
+    We rationalise this by arguing the goods are representative of the full cargo of the truck, and hence our results generalise to the full capacity.
 \end{itemize}
 
 
 \subsection{Problem Variants}\label{subsec:problem-variants}
 
-We analyze four variants of the base problem, creating a 2×2 matrix of scenarios:
+We analyse four instances, characterised by the rental period of the trucks and the prevailing daily rental costs.
 
 \begin{itemize}
     \item \textbf{Truck Rental Strategy}:
     \begin{itemize}
-        \item Weekly rental: Lower daily cost but requires committing to fixed fleet size
-        \item Daily rental: Higher cost but allows dynamic fleet adjustment
+        \item Weekly rental: Lower daily cost but requires committing to a fixed number of trucks for the full week.
+        \item Daily rental: Higher cost but allows for the number of trucks to vary throughout the week, especially on Thursday/Friday to meet Black Friday demands.
     \end{itemize}
 
-    \item \textbf{Truck Market Conditions}:
+    \item \textbf{Truck Rental Costs}:
     \begin{itemize}
-        \item High truck costs: Representing peak season rates when logistics capacity is scarce
-        \item Low truck costs: Representing normal market conditions
+        \item High truck costs: Representing truck rental companies increasing prices due to high demand around the Black Friday period.
+        \item Low truck costs: Representing regular pricing.
     \end{itemize}
 \end{itemize}
 
 
-These variants allow us to examine how optimal distribution strategies change under different operational constraints and market conditions, providing robust insights for retail decision-makers.
-This also allows for companies to adapt to prevailing market conditions and assess the cost/benefit of a flexible fleet during highly-volatile periods.
+These variants allow us examine if our optimal solution is sensitive to truck management and if so to quantify how much of an impact on bottom-lines this can have.
 
 The data for these variants is available in Section~\ref{sec:data}, \textit{Data}.
 
@@ -172,16 +139,11 @@ The data for these variants is available in Section~\ref{sec:data}, \textit{Data
 While framed around Black Friday, this problem represents a broader class of distribution challenges during promotional periods.
 Similar patterns occur during:
 \begin{itemize}
-    \item Product launches with anticipated demand spikes
-    \item Seasonal sales events (back-to-school, holiday shopping)
-    \item Flash sales and limited-time promotions in e-commerce
+    \item Product launches
+    \item Seasonal sales events
+    \item Flash sales and limited-time promotions
     \item Emergency response requiring rapid inventory deployment
 \end{itemize}
-
-The insights from our analysis apply to any situation where retailers must balance distribution efficiency against service levels under extreme demand volatility and capacity constraints.
-
-
-
 
 
 
@@ -189,68 +151,16 @@ The insights from our analysis apply to any situation where retailers must balan
 \section{Literature Review}\label{sec:literature-review}
 
 The optimisation of supply chain distribution systems has been extensively studied in operations research, with mixed-integer programming (MIP) emerging as a dominant methodology for addressing complex logistics challenges.
-This literature review examines relevant research in supply chain optimisation, inventory management, and retail distribution planning, with particular attention to multi-period models and promotional period management.
-
-\subsection{Mixed-Integer Programming in Supply Chain Management}\label{subsec:mixed-integer-programming-in-supply-chain-management}
-
-Mixed-integer programming has proven to be a powerful tool for optimising complex supply chain networks.
-Mixed Integer Linear Programming (MILP) has emerged as a powerful tool for optimising complex supply chain networks~\cite{researchgate2024optimizing}, enabling companies to model production planning, network design, and transportation logistics while achieving significant cost reductions.
-The discrete nature of many supply chain decisions - such as the number of trucks to hire or the selection of warehouse locations - makes MIP particularly suitable for these applications.
-
-IBM Systems and Technology Group uses operations research models and methods extensively for solving large-scale supply chain optimisation (SCO) problems for planning its extended enterprise semiconductor supply chain~\cite{denton2005methods}, demonstrating the scalability of MIP approaches to industrial applications.
-However, the computational complexity of large-scale MIP models has led researchers to develop specialised solution techniques.
-Pure optimisation methods are computationally infeasible, and fast heuristic methods alone generate poor results~\cite{denton2005methods}, necessitating hybrid approaches that combine exact methods with heuristics.
-
-\subsection{Multi-Period Inventory Management}\label{subsec:multi-period-inventory-management}
-
-The management of inventory across multiple time periods presents unique challenges that have been addressed through various modeling approaches.
-Qiu, R., Sun, M., \& Lim, Y. F. (2017) consider a finite-horizon single-product periodic-review inventory management problem with demand distribution uncertainty~\cite{qiu2017optimizing}, highlighting the importance of robust optimisation approaches when dealing with uncertain demand patterns.
-
-Periodic review policies, particularly the $(s,S)$ policy, have received significant attention in the literature.
-The $(s, S)$ policy is a well-studied strategy~\cite{zheng1991}, summarised as when an item drops below some reserve amount $s$, a purchase order is placed to replenish the item back to a standard level $S$.
-In another paper, periodic review of the $(s,S)$ policy is used to optimise inventories from an integrated perspective of inventory management across the supply chain over time~\cite{mdpi2025inventory}.
-Under this variation, optimisation of the parameters $s, S$ themselves over time as a sort of meta-optimisation problem over the planning horizon~\cite{mdpi2025inventory}, providing a practical framework for dynamic inventory replenishment decisions.
-
-The coordinated management of multiple products adds another layer of complexity.
-A multi-item multi-period inventory control model is developed for known-deterministic variable demands under limited available budget~\cite{mousavi2014multi}, addressing the resource allocation challenges that arise when managing diverse product portfolios.
-This is particularly relevant for retail environments where interaction effects across complementary products plays an important role in characterising the optimal inventory policy~\cite{poormoaied2021inventory}.
-
-\subsection{Promotional Period Supply Chain Management}\label{subsec:promotional-period-supply-chain-management}
+In an effort to keep this literature review brief, and noting that the literature review is not the core of this report, we will only touch on the difficulties of inventory management surrounding Black Friday.
 
 While the academic literature on Black Friday-specific optimisation is limited, industry reports highlight the unique challenges of promotional period supply chain management.
-85\% of retailers are at least somewhat concerned about inventory shortages during BFCM  (Black Friday and Cyber Monday)~\cite{anvyl2023black}, emphasizing the critical importance of effective distribution planning during these peak periods.
+85\% of retailers are at least somewhat concerned about inventory shortages during BFCM (Black Friday and Cyber Monday)~\cite{anvyl2023black}, which emphasises the challenges retailers face around these periods.
 
-The demand volatility characteristic of promotional periods creates particular challenges.
 In order to meet the targets being set by Black Friday's continued growth, supply chains are required to deliver high quantities of stock to specific locations with short deadlines~\cite{scmag2024black}.
 This aligns with our modeling approach, which incorporates demand scaling factors ranging from 0.2x to 10.0x normal levels throughout the Black Friday week.
 
 Recent industry trends show that `\textit{Early sales events like Black Friday and Cyber Monday have conditioned shoppers to start planning and purchasing well in advance}'~\cite{sc247consumer}, extending the planning horizon and requiring more sophisticated multi-period optimisation models.
 This evolution in consumer behavior reinforces the need for flexible distribution strategies that can adapt to changing demand patterns over extended promotional periods.
-
-\subsection{Integration of Distribution and Inventory Decisions}\label{subsec:integration-of-distribution-and-inventory-decisions}
-
-The integration of transportation and inventory decisions represents a critical advancement in supply chain optimisation.
-When consumers shop online and pick up at store their orders, stores are typically visited by a truck that supplies the collection points and by a transport that replenishes the inventory of the store~\cite{vazquez2021mixed}, highlighting the need for coordinated logistics planning.
-
-Recent research has emphasised the importance of considering multiple cost components simultaneously.
-This paper attempts to integrate both forward and reverse logistics to design a general closed loop supply chain (CLSC) network consisting of manufacturing plant, distribution center and customer market~\cite{saha2017mixed}, though our focus remains on forward logistics given the nature of Black Friday sales.
-
-\subsection{Solution Approaches and Computational Considerations}\label{subsec:solution-approaches-and-computational-considerations}
-
-The computational complexity of multi-period, multi-product distribution problems has led to various solution approaches.
-Since these models are very difficult to solve, they require exploiting their properties and developing special solution techniques to reduce the computational effort~\cite{you2008mixed}.
-Decomposition methods, including Lagrangean relaxation and branch-and-bound algorithms, have proven effective for large-scale problems.
-
-The book by Sawik, T. (2011), `\textit{Scheduling in Supply Chains Using Mixed Integer Programming}'~\cite{sawikt2011scheduling}, provides comprehensive coverage of MIP applications to supply chain scheduling, emphasising the importance of preprocessing and modern MIP software capabilities in solving practical-scale problems.
-This aligns with our use of Gurobi, a state-of-the-art MIP solver, for our optimisation model.
-
-\subsection{Research Gap and Contribution}\label{subsec:research-gap-and-contribution}
-
-While extensive literature exists on general supply chain optimisation and inventory management, there is limited research specifically addressing the unique characteristics of Black Friday distribution challenges using real-world data.
-Most studies either focus on theoretical models with synthetic data or examine steady-state operations rather than promotional periods with extreme demand volatility.
-
-Our research addresses this gap by developing a MIP model that explicitly incorporates Black Friday-specific characteristics: dramatic demand fluctuations, product-specific obsolescence risks (particularly for heavily discounted items), and the trade-off between flexible daily truck rentals versus cost-effective weekly contracts.
-By grounding our analysis in actual product specifications and industry-standard cost structures, we provide a practical framework that retailers can directly apply to their Black Friday distribution planning.
 
 
 
@@ -274,7 +184,8 @@ Samsung Galaxy Buds FE & \$200~\cite{earphonescost} & \$50 & \$10/day & 1,500~\c
 \end{tabular}\label{tab:table}
 \end{table}
 
-Product dimensions were sourced from manufacturer specifications.
+Product dimensions were sourced where possible from the manufacturer, otherwise from Amazon.
+A small scaling up of the dimensions was applied to represent the space taken up by packaging.
 Truck capacity allocations assume these products represent 1\% of total cargo, yielding the units per truck shown above.
 
 \subsection{Cost Parameters}\label{subsec:cost-parameters}
@@ -297,7 +208,7 @@ Truck capacity allocations assume these products represent 1\% of total cargo, y
 
     \item \textbf{Truck rental costs} from commercial providers:
     \begin{itemize}
-        \item Weekly: \$1,100 for 7 days (50m³ truck)
+        \item Weekly: \$1,100 for 7 days (50m³ truck)~\cite{truckcosts1}~\cite{truckcosts2}
         \item Daily: \$100-\$200 depending on demand
         \item Daily premium: 50\% surcharge over weekly rate
     \end{itemize}
@@ -325,31 +236,23 @@ Phones (Good 2) & 10 & 5 & 3 & 1 & 100 & 80 & 80 \\
 
 Key demand characteristics:
 \begin{itemize}
-    \item \textbf{Earphones}: Steady decline from Monday to Thursday (100→10 units), massive spike on Black Friday (1,000 units), gradual decline over weekend
+    \item \textbf{Earphones}: Steady decline from Monday to Thursday (100 down to 10 units), massive spike on Black Friday (1,000 units), gradual decline over weekend
     \item \textbf{Headphones}: No demand Wednesday-Thursday as consumers wait for deals, concentrated spike on Black Friday (200 units)
-    \item \textbf{Phones}: Minimal pre-Black Friday demand, sustained weekend demand (80 units/day) as consumers purchase accessories
+    \item \textbf{Phones}: Minimal pre-Black Friday demand, sustained weekend demand (80 units/day) as consumers continue to purchase through to Cyber Monday.
 \end{itemize}
 
 \subsection{Network Structure}\label{subsec:network-structure}
 \begin{itemize}
     \item 5 warehouses representing distribution centers
     \item 5 retailers representing metropolitan locations
-    \item Transportation costs varying by distance (range: \$0.40-\$2.60 per unit)
+    \item Transportation costs varying in a range between \$0.40 to \$2.60 per unit, representing distances between stores and different characteristics of the goods (especially fragility)
     \item Maximum 10 trucks daily (driver availability constraint)
 \end{itemize}
 
 \subsection{Computational Scale Study}\label{subsec:computational-scale-study}
 
-Beyond analyzing the specific Black Friday case, we investigate how the problem characteristics and solution approaches scale to larger supply chain networks.
-This scale study serves two critical purposes:
-\begin{itemize}
-    \item \textbf{Practical Relevance}: Real-world retailers often operate dozens of warehouses serving hundreds of stores with thousands of SKUs.
-    Understanding how our optimisation approach performs at different scales ensures the methodology remains viable for enterprise-level implementation.
-
-    \item \textbf{Computational Insights}: As problem size increases, the number of decision variables grows exponentially (warehouses × retailers × products × periods).
-    The scale study reveals whether solution times increase linearly, polynomially, or exponentially, informing decisions about model granularity and decomposition strategies.
-\end{itemize}
-
+Beyond analyzing the specific Black Friday case, we investigate how our solution scales as we increase the number of warehouses, goods and retailers.
+This is particularly important to consider, as our problem size grows exponentially across these three dimensions, and we want to ensure that we can model a realistic retailer scenario consisting of hundreds of goods and tens of warehouses and retailers.
 
 Further information on the Computational Case Study, including scales studied and the methods for creating synthetic data is available in section~\ref{sec:computational-scale-study}.
 
@@ -846,137 +749,71 @@ In the future, this model can be improved by considering the following effects:
 
 \begin{thebibliography}{99}
 
-\bibitem{zheng1991}
-Zheng, Y., Federgruen, A. (1991)
-Finding optimal (s, S) policies is about as simple as evaluating a single policy. \textit{Operations Research}, 39(4),  654--665.
-Retrieved from \url{https://business.columbia.edu/sites/default/files-efs/pubfiles/4030/federgruen_finding.pdf}
+    \bibitem{anvyl2023black}
+    Anvyl (2023).
+    5 Black Friday \& Cyber Monday Supply Chain Challenges and How to Beat Them.
+    Retrieved from \url{https://anvyl.com/blog/5-black-friday-cyber-monday-supply-chain-challenges/}
 
-\bibitem{anvyl2023black}
-Anvyl (2023).
-5 Black Friday \& Cyber Monday Supply Chain Challenges and How to Beat Them.
-Retrieved from \url{https://anvyl.com/blog/5-black-friday-cyber-monday-supply-chain-challenges/}
+    \bibitem{scmag2024black}
+    Supply Chain Magazine (2024).
+    Black Friday: Reinforcing Supply Chains to Meet Demand.
+    Retrieved from \url{https://supplychaindigital.com/digital-supply-chain/how-supply-chains-can-meet-black-friday-demand}
 
-\bibitem{sawikt2011scheduling}
-Sawik, T. (2011). \textit{Scheduling in Supply Chains Using Mixed Integer Programming}.
-John Wiley \& Sons.
+    \bibitem{sc247consumer}
+    Supply Chain 24/7 (2024).
+    How Consumer Trends Are Reshaping Black Friday and Supply Chains.
+    Retrieved from \url{https://www.supplychain247.com/article/black-friday-new-consumer-retail-habits-supply-chain}
 
-\bibitem{denton2005methods}
-Denton, B., Forrest, J., \& Milne, R. J. (2005).
-Methods for solving a mixed integer program for semiconductor supply chain optimization at IBM.
-Retrieved from \url{https://www.researchgate.net/publication/228351554_Methods_for_solving_a_mixed_integer_program_for_semiconductor_supply_chain_optimization_at_IBM}
+    \bibitem{phonecost}
+    JB HiFi (2025).
+    Samsung Galaxy S25 Ultra 512GB (Titanium Black).
+    Retrieved from \url{https://www.jbhifi.com.au/products/samsung-galaxy-s25-ultra-512gb-titanium-black}
 
-\bibitem{saha2017mixed}
-Saha, A., \& Asadujjaman, M. (2017).
-A Mixed Integer Linear Programming Model for Solving Closed Loop Supply Chain Problems.
-Retrieved from \url{https://www.researchgate.net/publication/311911940_A_Mixed_Integer_Linear_Programming_Model_for_Solving_Closed_Loop_Supply_Chain_Problems}
+    \bibitem{phonespecs}
+    Samsung (2025).
+    Samsung Galaxy S25 Ultra 512GB (Titanium Black).
+    Retrieved from \url{https://www.samsung.com/au/smartphones/galaxy-s25-ultra/specs/\#:~:text=Physical\%20specification,Gear\%20Support}
 
-\bibitem{mousavi2014multi}
-Mousavi SM, Niaki ST, Bahreininejad A, Musa SN. (2014)
-Multi-item multiperiodic inventory control problem with variable demand and discounts: a particle swarm optimization algorithm.
-ScientificWorldJournal.
-2014;2014:136047.
-doi: 10.1155/2014/136047.
-Epub 2014 Jun 30.
-PMID: 25093195;
-PMCID: PMC4100296.
-Retrieved from \url{https://pubmed.ncbi.nlm.nih.gov/25093195/}
+    \bibitem{headphonescost}
+    JB Hifi (2025).
+    Audio Technica ATH-R50X Professional Open Back Headphone.
+    Retrieved from \url{https://www.jbhifi.com.au/products/audio-technica-ath-r50x-professional-open-back-headphone}
 
-\bibitem{mdpi2025inventory}
-Jorge Vicente, J. (2025).
-Optimizing Supply Chain Inventory: A Mixed Integer Linear Programming Approach. \textit{Systems}, 13(1), 33.
-Retrieved from \url{https://www.mdpi.com/2079-8954/13/1/33}
+    \bibitem{headphonesspecs}
+    Amazon (2025).
+    Audio Technica ATH-R50X Professional Open Back Headphone.
+    Retrieved from \url{https://www.amazon.com/Audio-Technica-Professional-Open-Back-Reference-Headphones/dp/B0DTTWF1Z9?th=1}
 
-\bibitem{poormoaied2021inventory}
-Poormoaied, S.
-Inventory decision in a periodic review inventory model with two complementary products.
-Ann Oper Res 315, 1937–1970 (2022).
-https://doi.org/10.1007/s10479-021-03949-w
-Retrieved from \url{https://link.springer.com/article/10.1007/s10479-021-03949-w}
+    \bibitem{earphonescost}
+    JB HiFi (2025).
+    Samsung Galaxy Buds FE (White).
+    Retrieved from \url{https://www.jbhifi.com.au/products/samsung-galaxy-buds-fe-white}
 
-\bibitem{researchgate2024optimizing}
-Li, X., Ji, X., \& Zeng, X. (2024).
-Optimizing supply chain networks using mixed integer linear programming (MILP).
-\textit{Theoretical and Natural Science}, \textbf{53}, 10--15.
-Retrieved from \url{https://www.ewadirect.com/proceedings/tns/article/view/15570}
+    \bibitem{earphonesspecs}
+    Amazon (2025).
+    Samsung Galaxy Buds FE (White).
+    Retrieved from \url{https://www.amazon.com.au/Samsung-Galaxy-Buds-FE-SM-R400NZWAEUA/dp/B0CPFH7FBM}
 
-\bibitem{sc247consumer}
-Supply Chain 24/7 (2024).
-How Consumer Trends Are Reshaping Black Friday and Supply Chains.
-Retrieved from \url{https://www.supplychain247.com/article/black-friday-new-consumer-retail-habits-supply-chain}
+    \bibitem{holdingcosts}
+    Zoho (2024).
+    What is Carry Cost?
+    Retrieved from \url{https://www.zoho.com/inventory/academy/inventory-management/what-is-carrying-cost.html}
 
-\bibitem{scmag2024black}
-Supply Chain Magazine (2024).
-Black Friday: Reinforcing Supply Chains to Meet Demand.
-Retrieved from \url{https://supplychaindigital.com/digital-supply-chain/how-supply-chains-can-meet-black-friday-demand}
+    \bibitem{shortagecosts}
+    UnleashedSoftware (2024).
+    What is a Good Profit Margin?
+    Retrieved from \url{https://www.unleashedsoftware.com/inventory-accounting-guide/what-is-a-good-profit-margin/}
 
-\bibitem{vazquez2021mixed}
-Vazquez-Noguerol, M., Comesaña-Benavides, J.A., Riveiro-Sanroman, S. et al.
-A mixed integer linear programming model to support e-fulfillment strategies in warehouse-based supermarket chains.
-Cent Eur J Oper Res 30, 1369–1402 (2022).
-https://doi.org/10.1007/s10100-021-00778-x
-Retrieved from \url{https://link.springer.com/article/10.1007/s10100-021-00778-x}
+    \bibitem{truckcosts1}
+    Budget Trucks (2025).
+    Victoria Weekly Rates on Trucks.
+    Retrieved from \url{https://www.budgettrucks.com.au/en/offers/vic/weekly-rates}
 
-\bibitem{you2008mixed}
-You, F., \& Grossmann, I. E. (2008).
-Mixed-Integer Nonlinear Programming Models and Algorithms for Large-Scale Supply Chain Design with Stochastic Inventory Management.
-\textit{Industrial \& Engineering Chemistry Research}, 47(20), 7802--7817.
-Retrieved from \url{https://pubs.acs.org/doi/10.1021/ie800257x}
+    \bibitem{truckcosts2}
+    Hertz Trucks (2025).
+    Trucks with 50m3 capacity.
+    Retrieved from \url{https://www.hertztrucks.com.au/bookings/choose-vehicle}
 
-\bibitem{qiu2017optimizing}
-Qiu, R., Sun, M., \& Lim, Y. F. (2017).
-Optimizing (s, S) Policies for Multi-period Inventory Models with Demand Distribution Uncertainty: Robust Dynamic Programming Approaches.
-\textit{European Journal of Operational Research}, 261(3), 880--892.
-Retrieved from \url{https://www.sciencedirect.com/science/article/abs/pii/S0377221717301492}
-
-\bibitem{holdingcosts}
-Zoho (2024).
-What is Carry Cost?
-Retrieved from \url{https://www.zoho.com/inventory/academy/inventory-management/what-is-carrying-cost.html}
-
-\bibitem{shortagecosts}
-UnleashedSoftware (2024).
-What is a Good Profit Margin?
-Retrieved from \url{https://www.unleashedsoftware.com/inventory-accounting-guide/what-is-a-good-profit-margin/}
-
-\bibitem{truckcosts1}
-Budget Trucks (2025).
-Victoria Weekly Rates on Trucks.
-Retrieved from \url{https://www.budgettrucks.com.au/en/offers/vic/weekly-rates}
-
-\bibitem{truckcosts2}
-Hertz Trucks (2025).
-Trucks with 50m3 capacity.
-Retrieved from \url{https://www.hertztrucks.com.au/bookings/choose-vehicle}
-
-\bibitem{phonecost}
-JB HiFi (2025).
-Samsung Galaxy S25 Ultra 512GB (Titanium Black).
-Retrieved from \url{https://www.jbhifi.com.au/products/samsung-galaxy-s25-ultra-512gb-titanium-black}
-
-\bibitem{phonespecs}
-Samsung (2025).
-Samsung Galaxy S25 Ultra 512GB (Titanium Black).
-Retrieved from \url{https://www.samsung.com/au/smartphones/galaxy-s25-ultra/specs/\#:~:text=Physical\%20specification,Gear\%20Support}
-
-\bibitem{headphonescost}
-JB Hifi (2025).
-Audio Technica ATH-R50X Professional Open Back Headphone.
-Retrieved from \url{https://www.jbhifi.com.au/products/audio-technica-ath-r50x-professional-open-back-headphone}
-
-\bibitem{headphonesspecs}
-Amazon (2025).
-Audio Technica ATH-R50X Professional Open Back Headphone.
-Retrieved from \url{https://www.amazon.com/Audio-Technica-Professional-Open-Back-Reference-Headphones/dp/B0DTTWF1Z9?th=1}
-
-\bibitem{earphonescost}
-JB HiFi (2025).
-Samsung Galaxy Buds FE (White).
-Retrieved from \url{https://www.jbhifi.com.au/products/samsung-galaxy-buds-fe-white}
-
-\bibitem{earphonesspecs}
-Amazon (2025).
-Samsung Galaxy Buds FE (White).
-Retrieved from \url{https://www.amazon.com.au/Samsung-Galaxy-Buds-FE-SM-R400NZWAEUA/dp/B0CPFH7FBM}
 
 \end{thebibliography}
 
