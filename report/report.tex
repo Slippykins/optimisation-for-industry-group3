@@ -504,6 +504,7 @@ Most of the cuts derived by this step are different from Gomory cuts, which are 
 Tables 1 to 6 presents the optimized total cost, daily cost and average truck utilization in each scenario.\\
 \begin{table}[ht]
     \centering
+    \caption{Minimized cost from the model}\label{tab:table3}
     \begin{tabularx}{1\textwidth}{
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X
@@ -520,12 +521,12 @@ Tables 1 to 6 presents the optimized total cost, daily cost and average truck ut
   Low Rent, Weekly & 10 & 7000.0 & 11517.9	& 0.0 & 6200.0 & 24717.9 \\
   \hline
 \end{tabularx}
-    \caption{Minimized cost from the model}\label{tab:table3}
+
 \end{table}
 
-\\
 \begin{table}[ht]
     \centering
+    \caption{Minimized daily cost, when trucks are rented daily and expensive}\label{tab:table4}
     \begin{tabularx}{1\textwidth}{
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X
@@ -548,11 +549,12 @@ Tables 1 to 6 presents the optimized total cost, daily cost and average truck ut
   Day 7 & 1200.0 & 2093.9 & 0.0 & 72.0 & 3365.9 \\
   \hline
 \end{tabularx}
-    \caption{Minimized daily cost, when trucks are rented daily and expensive}\label{tab:table4}
+
 \end{table}
-\\
+
 \begin{table}[ht]
     \centering
+     \caption{Minimized daily cost, when trucks are rented daily and less expensive}\label{tab:table5}
     \begin{tabularx}{1\textwidth}{
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X
@@ -575,11 +577,12 @@ Tables 1 to 6 presents the optimized total cost, daily cost and average truck ut
   Day 7 & 750.0 & 2067.8 & 0.0 & 0.0 & 2817.8 \\
   \hline
 \end{tabularx}
-    \caption{Minimized daily cost, when trucks are rented daily and less expensive}\label{tab:table5}
+
 \end{table}
-\\
+
 \begin{table}[ht]
     \centering
+    \caption{Minimized daily cost, when trucks are rented weekly and expensive}\label{tab:table6}
     \begin{tabularx}{1\textwidth}{
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X
@@ -602,11 +605,12 @@ Tables 1 to 6 presents the optimized total cost, daily cost and average truck ut
   Day 7 & 2000.0 & 2058.0 & 0.0 & 0.0 & 4058.0 \\
   \hline
 \end{tabularx}
-    \caption{Minimized daily cost, when trucks are rented weekly and expensive}\label{tab:table6}
+
 \end{table}
-\\
+
 \begin{table}[ht]
     \centering
+    \caption{Minimized daily cost, when trucks are rented weekly and less expensive}\label{tab:table7}
     \begin{tabularx}{1\textwidth}{
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X
@@ -629,12 +633,13 @@ Tables 1 to 6 presents the optimized total cost, daily cost and average truck ut
   Day 7 & 1000.0 & 2058.0 & 0.0 & 0.0 & 3058.0 \\
   \hline
 \end{tabularx}
-    \caption{Minimized daily cost, when trucks are rented weekly and less expensive}\label{tab:table7}
+
 \end{table}
 \\
 
 \begin{table}[ht]
     \centering
+    \caption{Average truck utilization comparison}\label{tab:table8}
     \begin{tabularx}{1\textwidth}{
   | >{\centering\arraybackslash}X
   | >{\centering\arraybackslash}X
@@ -651,7 +656,7 @@ Tables 1 to 6 presents the optimized total cost, daily cost and average truck ut
   Low Rent, Weekly & 0.54 \\
   \hline
 \end{tabularx}
-    \caption{Average truck utilization comparison}\label{tab:table8}
+
 \end{table}
 
 \subsection{Analysis}\label{subsec:analysis}
@@ -704,8 +709,9 @@ Note that a scaling factor is applied to simulate the Black Friday effect, simil
 In addition, we adjust the maximum number of trucks using the following expression to ensure that the optimisation problem is feasible but challenging:
 
 $$
-maximum \ number \ of \ trucks =\left\lceil 1.2 \times \frac{total \  volume}{number \ of \  periods \times truck \ capacity} \right\rceil .
+M_T = \left\lceil 1.2 \times \frac{\sum_{g \in G}\sum_{p \in P} \sum_{r \in R} D_{r,g,p}K_g}{K_T \times n_p} \right\rceil.
 $$
+
 
 \subsection{Results}\label{subsec:results}
 
@@ -734,6 +740,8 @@ The computational results are summarized in Table \ref{tab:method-comparison}.
         (20, 120, 80, 5) & 10.03 & 0.00 & 9.56 & 0.00 \\
         \bottomrule
     \end{tabular}
+    \captionsetup{justification=justified,singlelinecheck=false}
+    \caption*{\footnotesize \textit{Note.} $(a, b, c, d)$ represents an instance with $a$ warehouses, $b$ goods, $c$ retailers, and $d$ periods.}
 \end{table}
 
 We observe that all instances can be solved to near optimality within 100 seconds.
@@ -886,8 +894,9 @@ https://doi.org/10.1007/s10479-021-03949-w
 Retrieved from \url{https://link.springer.com/article/10.1007/s10479-021-03949-w}
 
 \bibitem{researchgate2024optimizing}
-Li, X., Ji, X., Zeng, X. (2024).
+Li, X., Ji, X., \& Zeng, X. (2024).
 Optimizing supply chain networks using mixed integer linear programming (MILP).
+\textit{Theoretical and Natural Science}, \textbf{53}, 10--15.
 Retrieved from \url{https://www.ewadirect.com/proceedings/tns/article/view/15570}
 
 \bibitem{sc247consumer}
