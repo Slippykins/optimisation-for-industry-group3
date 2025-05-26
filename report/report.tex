@@ -303,10 +303,10 @@ To simplify the model, we introduce two dummy decision variables \textit{carried
 Let
 
 \begin{alignat}{2}
-    C_t = & \sum_{w \in W}\sum_{r \in R}\sum_{g \in G}\sum_{p \in P} T_{w,r,g} t_{w,r,g,p}  & \forall w \in W, r \in R, g \in G, p \in P & \quad \text{(Total transport costs)} \\
-    C_s = & \sum_{r \in R}\sum_{g \in G}\sum_{p \in P} S_{g} s_{r,g,p}  & \forall r \in R, g \in G, p \in P & \quad \text{(Total shortage costs)}\\
-    C_h = & \sum_{r \in R}\sum_{g \in G}\sum_{p \in P} H_{g} h_{r,g,p}  & \forall r \in R, g \in G, p \in \{P \cup \{n_p + 1\}\} & \quad \text{(Total holding costs)}\\
-    C_r = & \sum_{w \in W}\sum_{p \in P} R_T a_{w,p}  & \forall w \in W, p \in P & \quad \text{(Total truck rental costs)}
+    C_t = & \sum_{w \in W}\sum_{r \in R}\sum_{g \in G}\sum_{p \in P} T_{w,r,g} t_{w,r,g,p}  & \quad & \quad \text{(Total transport costs)} \\
+    C_s = & \sum_{r \in R}\sum_{g \in G}\sum_{p \in P} S_{g} s_{r,g,p}  & \quad & \quad \text{(Total shortage costs)}\\
+    C_h = & \sum_{r \in R}\sum_{g \in G}\sum_{p \in P \cup \{n_p + 1\}} H_{g} h_{r,g,p}  & \quad & \quad \text{(Total holding costs)}\\
+    C_r = & \sum_{w \in W}\sum_{p \in P} R_T a_{w,p}  & \quad & \quad \text{(Total truck rental costs)}
 \end{alignat}
 
 Then our model is
@@ -314,7 +314,7 @@ Then our model is
 \begin{alignat}{2}
     \min \quad & C_t + C_s + C_h + C_r & &  \quad \text{(Minimise total cost of system)},\\
     \text{s.t.} \quad & \sum_{w\in W} a_{w,p} = r, & \quad & \forall p \in P, \quad \text{(Daily truck allocation = hired)},\\
-    & \sum_{g \in G} K_g \sum_{r \in R} t_{w,r,g,p} \leq a_{w,p} * K_T, & \quad & \forall w \in W, p \in P, \quad \text{(Total sent less than capacity)},\\
+    & \sum_{g \in G} K_g \sum_{r \in R} t_{w,r,g,p} \leq K_T a_{w,p} , & \quad & \forall w \in W, p \in P, \quad \text{(Total sent less than capacity)},\\
     & h_{r,g,1} =0, & \quad & \forall r \in R, g \in G, \quad \text{(Retailers start with no stock)},\\
     & s_{r,g,p} \geq D_{r,g,p} - h_{r,g,p} - \sum_{w \in W} t_{w,r,g,p}, & \quad & \forall r \in R, g \in G, p \in P \quad \text{(Shortage defn)},\\
     & h_{r,g,(p+1)} = \sum_{w \in W} t_{w,r,g,p} - D_{r,g,p} + h_{r,g,p} + s_{r,g,p}, & \quad & \forall r \in R, g \in G, p \in P, \quad \text{(Held goods defn)},\\
@@ -322,7 +322,7 @@ Then our model is
     & a_{w,p} \geq 0 & \quad & \forall w \in W, p \in P, \quad \text{(Scope of variables)},\\
     & t_{w,r,g,p} \geq 0 & \quad & \forall w \in W, r \in R, g \in G, p \in P \quad \text{(Scope of variables)},\\
     & h_{r,g,p} \geq 0 & \quad & \forall r \in R, g \in G, p \in P \quad \text{(Scope of variables)},\\
-    & s_{r,g,p} \geq 0 & \quad & \forall r \in R, g \in G, p \in P \quad \text{(Scope of variables)}.
+    & s_{r,g,p} \geq 0 & \quad & \forall r \in R, g \in G, p \in P \quad \text{(Scope of variables)}
 \end{alignat}
 
 \textbf{The objective function} minimises the total cost of the system.
