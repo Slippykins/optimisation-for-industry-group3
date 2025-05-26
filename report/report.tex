@@ -28,7 +28,13 @@
 
 \section{Introduction}\label{sec:introduction}
 
-Distribution planning during promotional periods represents one of the most challenging problems in retail supply chain management.
+When you go into your favourite retailer, you rarely consider the immense effort and planning that went into ensuring those shiny new headphones were sitting on the shelf waiting for you.
+
+In order for those headphones to be stocked, they travelled through a complex and interconnected distribution system from supplier to retailer.
+Distribution is a critical component of supply chain management, widely applicable in various industries such as consumer electronics, food and beverage, apparel, and personal care products.
+The process may vary, but in most practical applications a set of central warehouses (referred to as main warehouses) must allocate goods to retail stores in an efficient manner to meet consumer demand.
+
+As if to add insult to injury, distribution planning during promotional periods represents one of the most challenging problems in retail supply chain management.
 When demand can surge to 10 to 100 times overnight, traditional inventory and transportation strategies often fail, leading to either costly stock shortages or excessive inventory holding costs.
 This project examines how mixed-integer programming can optimise distribution decisions for electronics retailers during Black Friday, one of the year's most intense promotional period.
 
@@ -40,7 +46,7 @@ We model a small-scale distribution network comprising 5 warehouses serving 5 re
 The network must distribute three representative products: high-value smartphones experiencing 100-fold day-on-day demand increases, headphones with concentrated Black Friday purchasing, and earphones facing obsolescence risks and heavy discounting.
 These products capture the diversity of challenges retailers face, from managing extreme demand spikes to balancing inventory risks for promotional items.
 
-The optimisation problem addresses two fundamental decisions: how to manage truck fleet capacity (comparing flexible daily rentals against cheaper weekly contracts) and how to transport products throughout the week to meet current and future demands.
+The optimisation problem addresses two fundamental decisions: where to assign trucks at the beginning of each day to best serve retailer demand, and how to transport products throughout the week to meet current and future demands.
 With truck availability limited to 10 vehicles per day (due to driver availability and to restrict the problem space) and each truck having a fixed capacity, the model must balance transportation against inventory costs while ensuring product availability during Black Friday demand surges.
 
 
@@ -66,10 +72,12 @@ The full demand profiles for these products can be seen in Table~\ref{tab:table2
 
 \subsection{Key Decisions}\label{subsec:key-decisions}
 
-The retailer must make two decisions:
+The retailer must make three decisions:
 \begin{itemize}
     \item \textbf{Total Trucks to Rent}: How many trucks to rent for the period, capped at a maximum of 10 per day.
-Depending on the problem variant (see Problem Variants~\ref{subsec:problem-variants}), daily rentals may be fixed for the week or may be allowed to vary via daily rental at a premium.
+Depending on the problem variant (see Problem Variants~\ref{subsec:problem-variants}), the number of trucks rented may be fixed for the week or may be allowed to vary daily at a premium.
+    \item \textbf{Truck Assignment}: Which warehouse to assign each truck to at the beginning of each day.
+All trucks must have an assignment, but the company is free to choose how many service each warehouse, and these allocations may change day-by-day.
     \item \textbf{Distribution Planning}: How many units of each product to ship from each warehouse to each retailer in each time period.
 These decisions must account for truck capacity constraints, varying transportation costs between locations, and the trade-off between holding inventory and risking stock shortages (missed sales opportunities).
 \end{itemize}
@@ -86,7 +94,7 @@ With each truck having a set capacity and products occupying different space, ma
 These characteristics heavily impact transportation considerations and the various costs faced by the retailer.
     \item \textbf{Cost Trade-offs}: The retailer must balance four competing cost components:
     \begin{itemize}
-        \item Transportation costs varying by distance and by good, capturing the overall cost of transporting each good and their unique characteristics applicable to transportation, like fragility.
+        \item Transportation costs varying by distance and by good, capturing the overall cost of transportation (mostly distance) and each good's unique characteristics applicable to transportation, like fragility.
         \item Truck rental costs.
         \item Inventory holding costs, including obsolescence risk for discounted items, expressed as a percentage of the retail price of the good.
         \item Shortage costs, reflecting lost profit margins and calculated as a percentage of the retail price.
@@ -98,16 +106,20 @@ These characteristics heavily impact transportation considerations and the vario
 To make the problem tractable while maintaining practical relevance, we adopt several simplifications:
 
 \begin{itemize}
-    \item \textbf{Deterministic Demand}: This is an unreasonable assumption, but adding uncertainty demand make the problem hard to model and difficult to understand the results.
+    \item \textbf{Deterministic Demand}: We assume the company has perfect information on the amount of demand each retailer will have for each good over the planning horizon.
+This is an unreasonable assumption, but adding uncertainty to demand profiles would then require multiple simulations to produce outcome distributions, and would detract from the main problem of study.
 
     \item \textbf{No Shipments Between Retailers}: While stores in the real world may ship goods between each other to smooth over shortages and held inventory, we remove this possibility to simplify the model.
 
     \item \textbf{Unlimited Warehouse Supply}: We assume that there is some other upstream logistics model that has optimised warehouse stock for the Black Friday week.
 
-    \item \textbf{Single Transportation Mode}: It's reasonable to assume that a company may use trucks of different sizes, but we fix all our trucks to a single size for simplicity.
+    \item \textbf{Single Transportation Mode}: We assume all trucks have identical capacity and dimensions.
+This is done to simplify the problem, but recognise there can be advantages to a heterogeneous truck fleet.
 
     \item \textbf{Representative products}: In order to keep things simple for this report, we only model three goods, and assume that these goods take up roughly 1\% of the total capacity of a 50m3 truck.
-    We rationalise this by arguing the goods are representative of the full cargo of the truck, and hence our results generalise to the full capacity.
+We rationalise this by arguing the goods are representative of the full cargo of the truck, and hence our results generalise to the full capacity.
+Furthermore, we wanted to craft realistic demand profiles, prices, shortage and holding costs, and doing so for 300+ goods would be time consuming.
+Instead, we opt to `shrink' the capacity available in each truck so that truck rental costs are still relevant and the number of trucks required to ship the goods is in scale with real good sizes.
 \end{itemize}
 
 
@@ -151,7 +163,7 @@ Similar patterns occur during:
 \section{Literature Review}\label{sec:literature-review}
 
 The optimisation of supply chain distribution systems has been extensively studied in operations research, with mixed-integer programming (MIP) emerging as a dominant methodology for addressing complex logistics challenges.
-In an effort to keep this literature review brief, and noting that the literature review is not the core of this report, we will only touch on the difficulties of inventory management surrounding Black Friday.
+In an effort to keep this literature review brief, and noting that the literature review is not the core of this report, we will only touch on the difficulties of inventory management surrounding promotional periods like Black Friday.
 
 While the academic literature on Black Friday-specific optimisation is limited, industry reports highlight the unique challenges of promotional period supply chain management.
 85\% of retailers are at least somewhat concerned about inventory shortages during BFCM (Black Friday and Cyber Monday)~\cite{anvyl2023black}, which emphasises the challenges retailers face around these periods.
@@ -208,7 +220,7 @@ Truck capacity allocations assume these products represent 1\% of total cargo, y
 
     \item \textbf{Truck rental costs} from commercial providers:
     \begin{itemize}
-        \item Weekly: \$1,100 for 7 days (50m³ truck)~\cite{truckcosts1}~\cite{truckcosts2}
+        \item Weekly: \$1,100 for 7 days (50m³ truck)~\cite{truckcosts1,truckcosts2}~
         \item Daily: \$100-\$200 depending on demand
         \item Daily premium: 50\% surcharge over weekly rate
     \end{itemize}
@@ -234,24 +246,17 @@ Phones (Good 2) & 10 & 5 & 3 & 1 & 100 & 80 & 80 \\
 \end{tabular}\label{tab:table2}
 \end{table}
 
-Key demand characteristics:
-\begin{itemize}
-    \item \textbf{Earphones}: Steady decline from Monday to Thursday (100 down to 10 units), massive spike on Black Friday (1,000 units), gradual decline over weekend
-    \item \textbf{Headphones}: No demand Wednesday-Thursday as consumers wait for deals, concentrated spike on Black Friday (200 units)
-    \item \textbf{Phones}: Minimal pre-Black Friday demand, sustained weekend demand (80 units/day) as consumers continue to purchase through to Cyber Monday.
-\end{itemize}
-
 \subsection{Network Structure}\label{subsec:network-structure}
 \begin{itemize}
     \item 5 warehouses representing distribution centers
     \item 5 retailers representing metropolitan locations
-    \item Transportation costs varying in a range between \$0.40 to \$2.60 per unit, representing distances between stores and different characteristics of the goods (especially fragility)
+    \item Transportation costs (defined for each warehouse, retailer and good combination) varying in a range between \$0.40 to \$2.60 per unit, representing distances between stores and different characteristics of the goods (especially fragility)
     \item Maximum 10 trucks daily (driver availability constraint)
 \end{itemize}
 
 \subsection{Computational Scale Study}\label{subsec:computational-scale-study}
 
-Beyond analyzing the specific Black Friday case, we investigate how our solution scales as we increase the number of warehouses, goods and retailers.
+Beyond analysing the specific Black Friday case, we investigate how our solution scales as we increase the number of warehouses, goods and retailers.
 This is particularly important to consider, as our problem size grows exponentially across these three dimensions, and we want to ensure that we can model a realistic retailer scenario consisting of hundreds of goods and tens of warehouses and retailers.
 
 Further information on the Computational Case Study, including scales studied and the methods for creating synthetic data is available in section~\ref{sec:computational-scale-study}.
